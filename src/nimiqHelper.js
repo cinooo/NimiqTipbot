@@ -31,6 +31,7 @@ export default {
 
     $.isEstablished = this.isEstablished.bind(this);
     $.getBalance = this._getBalance.bind(this);
+    $.sendTransaction = this.sendTransaction.bind(this);
 
     return $;
   },
