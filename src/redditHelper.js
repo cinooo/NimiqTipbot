@@ -302,7 +302,8 @@ ${messageFooter}`
         },
         link_id: linkId, // unique id for the comment
         parent_id: parentId, // unique id of parent comment, same as linkId if there is no parent (e.g root comment)
-        link_author: linkAuthor // originating post author
+        link_author: linkAuthor, // originating post author
+        link_permalink: linkPermalink
       } = comment;
       const isRootComment = linkId === parentId;
 
@@ -349,7 +350,15 @@ ${messageFooter}`
             await this.replyComment(commentId, 'No NIM balance found for your account please use the links to make a NIM deposit first.');
           }
           // log that comment has been paid
-          await dynamo.putTip(commentId, body, nimAmount, true);
+          await dynamo.putTip(commentId, {
+            sourceAuthor: authorName,
+            sourceAddress: userAddress,
+            sourceBalance: userBalance,
+            destinationAuthor,
+            destinationAddress: destinationFriendlyAddress,
+            nimAmount,
+            linkPermalink
+          });
         }
       }
     });

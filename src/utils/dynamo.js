@@ -63,14 +63,12 @@ export const putUser = async ({ authorName, privateKey, phrases, publicAddress }
   return dynamo.put(params).promise();
 };
 
-export const putTip = async (commentId, body, nimAmount, processed = true, time = new Date().getTime()) => {
+export const putTip = async (commentId, loggedDetails, time = new Date().getTime()) => {
   let params = {
     TableName: `${DYNAMO_TABLE_TIPBOT_TIPS}`,
     Item: {
       commentId,
-      body,
-      nimAmount,
-      processed,
+      ...loggedDetails,
       createdat: time,
       updatedat: time
     }
