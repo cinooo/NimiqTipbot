@@ -348,7 +348,7 @@ ${messageFooter}`
             await this.replyComment(commentId, 'No NIM balance found for your account please use the links to make a NIM deposit first.');
           }
           // log that comment has been paid
-          this.logComment(commentId, sourceAuthor, destinationAuthor, nimAmount);
+          await dynamo.putTip(commentId, body, nimAmount, true);
         }
       }
     });
