@@ -14,7 +14,7 @@ export default {
     Nimiq.GenesisConfig[NIMIQ_NETWORK].call(this);
 
     console.log('Connecting to Nimiq network', NIMIQ_NETWORK);
-    $.consensus = await Nimiq.Consensus.light();
+    $.consensus = await Nimiq.Consensus.nano();
 
     $.blockchain = $.consensus.blockchain;
     $.mempool = $.consensus.mempool;
