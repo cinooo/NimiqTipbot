@@ -134,13 +134,19 @@ export default {
     const satoshis = Nimiq.Policy.coinsToSatoshis(coins);
     // get the wallet of the author
     const wallet = this.getWalletFromPrivateKey(privateKey);
-    var transaction = wallet.createTransaction(
-      destinationAddress, // who we are sending to
-      satoshis, // amount in satoshi (no decimal format)
-      140, // fee
-      $.consensus.blockchain.head.height);
-    const result = await $.consensus.relayTransaction(transaction);
-    console.log('sendTransaction result', result);
-    return result;
+    console.log('sendTransaction');
+    console.log(wallet);
+    console.log(destinationFriendlyAddress);
+    console.log(destinationAddress);
+    console.log(satoshis);
+    console.log($.consensus.blockchain.head.height);
+    // var transaction = wallet.createTransaction(
+    //   destinationAddress, // who we are sending to
+    //   satoshis, // amount in satoshi (no decimal format)
+    //   140, // fee
+    //   $.consensus.blockchain.head.height);
+    // const result = await $.consensus.relayTransaction(transaction);
+    // console.log('sendTransaction result', result);
+    // return result;
   }
 };
