@@ -171,7 +171,14 @@ export default {
       $.consensus.blockchain.head.height);
     // const result = await $.consensus.relayTransaction(transaction);
     // console.log('sendTransaction result', result);
-    this.followTransaction(transaction);
+    const id = $.mempool.on('transaction-mined', tx2 => {
+      if (transaction.equals(tx2)) {
+        console.log('Transaction mined', id);
+        $.mempool.off('transaction-mined', id);
+      }
+    });
+    $.consensus.subscribeAccounts([transaction.recipient]);
+    await $.consensus.relayTransaction(transaction);
     const result = $.consensus.mempool.pushTransaction(transaction);
     console.log('result of sendTransaction', result);
     return result;
