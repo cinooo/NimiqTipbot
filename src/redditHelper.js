@@ -264,7 +264,9 @@ ${messageFooter}`;
       await this.postMessage(authorName, replySubject, replyMessage);
     }
 
-    if (subject === REDDIT.TOPICS.WITHDRAW) {
+    if (subject === REDDIT.TOPICS.WITHDRAW && typeof privateKey !== 'undefined' && typeof withdrawDestination !== 'undefined' && typeof withdrawAmount !== 'undefined') {
+      console.log('Legit withdrawal', withdrawDestination, withdrawAmount);
+      console.log('$', $);
       // process withdrawal
       const result = await $.sendTransaction(privateKey, withdrawDestination, withdrawAmount);
       return result;
