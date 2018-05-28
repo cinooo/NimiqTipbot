@@ -134,7 +134,7 @@ export default {
 
     // don't include auto inbox comment & post replies
     const actualMessages = responses.filter(response => response.was_comment === false);
-    console.log(actualMessages)
+    // console.log(actualMessages)
     return actualMessages.map(message => {
       const { author, subject, body, subreddit, id } = message;
       return {

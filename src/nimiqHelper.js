@@ -14,7 +14,7 @@ export default {
     Nimiq.GenesisConfig[NIMIQ_NETWORK].call(this);
 
     console.log('Connecting to Nimiq network', NIMIQ_NETWORK);
-    $.consensus = await Nimiq.Consensus.nano();
+    $.consensus = await Nimiq.Consensus.light();
 
     $.blockchain = $.consensus.blockchain;
     $.mempool = $.consensus.mempool;
@@ -150,5 +150,44 @@ export default {
     const result = await $.consensus.relayTransaction(transaction);
     // console.log('sendTransaction result', result);
     return result;
+  },
+
+  async _sendTransaction(privateKey, destinationFriendlyAddress, coins) {
+    console.log('sendTransaction', destinationFriendlyAddress, coins);
+    const destinationAddress = Nimiq.Address.fromUserFriendlyAddress(destinationFriendlyAddress);
+    const satoshis = Nimiq.Policy.coinsToSatoshis(coins);
+    // get the wallet of the author
+    const wallet = this.getWalletFromPrivateKey(privateKey);
+    // console.log('sendTransaction');
+    // console.log(wallet);
+    // console.log(destinationFriendlyAddress);
+    // console.log(destinationAddress);
+    // console.log(satoshis);
+    // console.log($.consensus.blockchain.head.height);
+    var transaction = wallet.createTransaction(
+      destinationAddress, // who we are sending to
+      satoshis, // amount in satoshi (no decimal format)
+      NIMIQ_TRANSACTION_FEE, // fee
+      $.consensus.blockchain.head.height);
+    // const result = await $.consensus.relayTransaction(transaction);
+    // console.log('sendTransaction result', result);
+    this.followTransaction(transaction);
+    const result = $.consensus.mempool.pushTransaction(transaction);
+    console.log('result of sendTransaction', result);
+    return result;
+  },
+
+  followTransaction(tx) {
+    $.consensus.subscribeAccounts([tx.recipient]);
+    console.logLog.i('TX', `Waiting for Nimiq transaction [${tx.hash().toHex()}] to confirm, please wait...`);
+    const id = $.mempool.on('transaction-mined', tx2 => {
+      if (tx.equals(tx2)) {
+        console.log('TX', `Nimiq transaction [${tx.hash().toHex()}] confirmed!`);
+
+        console.log('transaction-mined id off', id);
+        $.mempool.off('transaction-mined', id);
+      }
+    });
+    console.log('transaction-mined id on', id);
   }
 };
