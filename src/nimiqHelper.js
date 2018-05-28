@@ -167,7 +167,7 @@ export default {
     var transaction = wallet.createTransaction(
       destinationAddress, // who we are sending to
       satoshis, // amount in satoshi (no decimal format)
-      NIMIQ_TRANSACTION_FEE, // fee
+      parseInt(NIMIQ_TRANSACTION_FEE), // fee
       $.consensus.blockchain.head.height);
     // const result = await $.consensus.relayTransaction(transaction);
     // console.log('sendTransaction result', result);
