@@ -108,8 +108,7 @@ export default {
 
   async markMessageAsRead(messageId) {
     console.log(`Marking ${messageId} as read`);
-    const message = await this.R().get_message(messageId).markAsUnread();
-    // await message.markAsRead();
+    await this.R().get_message(messageId).mark_as_read();
   },
 
   readMessages($) {
@@ -120,17 +119,23 @@ export default {
           const message = messages[i];
           await this.handleInboxMessage(message, $);
           // console.log('result', result);
-          // await this.markMessageAsRead(message.id);
+          await this.markMessageAsRead(message.id);
         }
       };
     }, MESSAGES_POLL_TIME);
   },
 
   async getPrivateMessages() {
-    const response = await this.R().get_unread_messages({mark: true, limit: 2});
-    console.log('getPrivateMessages', response);
-    // return all the messages
-    return response.map(message => {
+    const responses = await this.R().get_unread_messages({mark: false, limit: 2});
+    // for (let i = 0; i < responses.length; i++) {
+    //   console.log(responses[i])
+    //   await this.markMessageAsRead(responses[i].id);
+    // }
+
+    // don't include auto inbox comment & post replies
+    const actualMessages = responses.filter(response => response.was_comment === false);
+    console.log(actualMessages)
+    return actualMessages.map(message => {
       const { author, subject, body, subreddit, id } = message;
       return {
         authorName: author.name, // the person mailing the tipbot
