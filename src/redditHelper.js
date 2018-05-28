@@ -108,8 +108,8 @@ export default {
 
   async markMessageAsRead(messageId) {
     console.log(`Marking ${messageId} as read`);
-    const message = await this.R().get_message(messageId);
-    await message.mark_as_read();
+    const message = await this.R().get_message(messageId).markAsUnread();
+    // await message.markAsRead();
   },
 
   readMessages($) {
@@ -120,14 +120,14 @@ export default {
           const message = messages[i];
           await this.handleInboxMessage(message, $);
           // console.log('result', result);
-          await this.markMessageAsRead(message.id);
+          // await this.markMessageAsRead(message.id);
         }
       };
     }, MESSAGES_POLL_TIME);
   },
 
   async getPrivateMessages() {
-    const response = await this.R().get_unread_messages({mark: false, limit: 2});
+    const response = await this.R().get_unread_messages({mark: true, limit: 2});
     console.log('getPrivateMessages', response);
     // return all the messages
     return response.map(message => {
