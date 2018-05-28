@@ -173,15 +173,14 @@ export default {
     // console.log('sendTransaction result', result);
     const id = $.mempool.on('transaction-mined', tx2 => {
       if (transaction.equals(tx2)) {
-        console.log('Transaction mined', id);
+        console.log('Transaction mined', tx2.hash().toHex());
         $.mempool.off('transaction-mined', id);
       }
     });
     $.consensus.subscribeAccounts([transaction.recipient]);
     await $.consensus.relayTransaction(transaction);
-    const result = $.consensus.mempool.pushTransaction(transaction);
-    console.log('result of sendTransaction', result);
-    return result;
+    console.log('relayTransaction, waiting to confirm', transaction.hash().toHex());
+    // const result = await $.consensus.mempool.pushTransaction(transaction);
   },
 
   followTransaction(tx) {
