@@ -116,9 +116,10 @@ export default {
     messagesPollId = setInterval(async () => {
       const messages = await this.getPrivateMessages();
       if (messages.length > 0) {
-        for (let i = 0, message = messages[i]; i < messages.length; i++) {
-          let result = await this.handleInboxMessage(message, $);
-          console.log('result', result);
+        for (let i = 0; i < messages.length; i++) {
+          const message = messages[i];
+          await this.handleInboxMessage(message, $);
+          // console.log('result', result);
           await this.markMessageAsRead(message.id);
         }
       };
@@ -126,7 +127,7 @@ export default {
   },
 
   async getPrivateMessages() {
-    const response = await this.R().get_unread_messages({mark: false, limit: 5});
+    const response = await this.R().get_unread_messages({mark: false, limit: 2});
     console.log('getPrivateMessages', response);
     // return all the messages
     return response.map(message => {
