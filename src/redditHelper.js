@@ -340,20 +340,17 @@ ${messageFooter}`
           const { publicAddress: destinationFriendlyAddress } = await this.getUserPublicAddress(destinationAuthor, $);
           if (userBalance >= nimAmount) {
             // has money, can proceed with tip
-            const result = await $.sendTransaction(privateKey, destinationFriendlyAddress, privateKey);
-            console.log(result);
+            await $.sendTransaction(privateKey, destinationFriendlyAddress, nimAmount);
+            // console.log(result);
+            await this.replyComment(commentId, `You have successfully tipped ${destinationAuthor} ${nimAmount} NIM.`);
           } else {
             // no amount? post a reply
             await this.replyComment(commentId, 'No NIM balance found for your account please use the links to make a NIM deposit first.');
           }
+          // log that comment has been paid
+          this.logComment(commentId, sourceAuthor, destinationAuthor, nimAmount);
         }
-
-        // send to destinationAuthor
-
-        // log that comment has been paid
-        this.logComment(commentId, sourceAuthor, destinationAuthor, nimAmount);
       }
-      console.log(authorName);
     });
   }
 };

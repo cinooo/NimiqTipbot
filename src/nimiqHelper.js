@@ -4,7 +4,8 @@ import MnemonicPhrase from './phrase.js';
 let $ = {};
 
 const {
-  NIMIQ_NETWORK
+  NIMIQ_NETWORK,
+  NIMIQ_TRANSACTION_FEE
 } = process.env;
 
 export default {
@@ -144,10 +145,10 @@ export default {
     var transaction = wallet.createTransaction(
       destinationAddress, // who we are sending to
       satoshis, // amount in satoshi (no decimal format)
-      140, // fee
+      NIMIQ_TRANSACTION_FEE, // fee
       $.consensus.blockchain.head.height);
     const result = await $.consensus.relayTransaction(transaction);
-    console.log('sendTransaction result', result);
+    // console.log('sendTransaction result', result);
     return result;
   }
 };
