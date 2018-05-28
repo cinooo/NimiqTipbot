@@ -31,7 +31,7 @@ export default {
 
     $.isEstablished = this.isEstablished.bind(this);
     $.getBalance = this._getBalance.bind(this);
-    $.sendTransaction = this.sendTransaction.bind(this);
+    $.sendTransaction = this._sendTransaction.bind(this);
 
     return $;
   },
@@ -110,13 +110,13 @@ export default {
   },
 
   getWalletFromPrivateKey(privateKey) {
-    const key = new Nimiq.PrivateKey(privateKey);
+    const key = new Nimiq.PrivateKey(Buffer.from(privateKey, 'hex'));
     const keyPair = Nimiq.KeyPair.derive(key);
     return new Nimiq.Wallet(keyPair);
   },
 
   getWalletFromPhrases(phrases) {
-    const privateKey = Buffer.from(MnemonicPhrase.mnemonicToKey(phrases, 'hex'));
+    const privateKey = MnemonicPhrase.mnemonicToKey(phrases);
     return this.getWalletFromPrivateKey(privateKey);
   },
 
@@ -129,24 +129,25 @@ export default {
     return friendlyAddress.replace(/ /g, '').length === 36;
   },
 
-  async sendTransaction(privateKey, destinationFriendlyAddress, coins) {
+  async _sendTransaction(privateKey, destinationFriendlyAddress, coins) {
+    console.log('sendTransaction', destinationFriendlyAddress, coins);
     const destinationAddress = Nimiq.Address.fromUserFriendlyAddress(destinationFriendlyAddress);
     const satoshis = Nimiq.Policy.coinsToSatoshis(coins);
     // get the wallet of the author
     const wallet = this.getWalletFromPrivateKey(privateKey);
-    console.log('sendTransaction');
-    console.log(wallet);
-    console.log(destinationFriendlyAddress);
-    console.log(destinationAddress);
-    console.log(satoshis);
-    console.log($.consensus.blockchain.head.height);
-    // var transaction = wallet.createTransaction(
-    //   destinationAddress, // who we are sending to
-    //   satoshis, // amount in satoshi (no decimal format)
-    //   140, // fee
-    //   $.consensus.blockchain.head.height);
-    // const result = await $.consensus.relayTransaction(transaction);
-    // console.log('sendTransaction result', result);
-    // return result;
+    // console.log('sendTransaction');
+    // console.log(wallet);
+    // console.log(destinationFriendlyAddress);
+    // console.log(destinationAddress);
+    // console.log(satoshis);
+    // console.log($.consensus.blockchain.head.height);
+    var transaction = wallet.createTransaction(
+      destinationAddress, // who we are sending to
+      satoshis, // amount in satoshi (no decimal format)
+      140, // fee
+      $.consensus.blockchain.head.height);
+    const result = await $.consensus.relayTransaction(transaction);
+    console.log('sendTransaction result', result);
+    return result;
   }
 };
