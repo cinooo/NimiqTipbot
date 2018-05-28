@@ -15,7 +15,8 @@ const {
   DONATE_ADDRESS,
   MESSAGES_POLL_TIME,
   NIMIQ_NETWORK,
-  REDDIT_REFRESH_TOKEN
+  REDDIT_REFRESH_TOKEN,
+  REDDIT_SUBSCRIBED_SUBREDDIT
 } = process.env;
 
 const REDDIT = {
@@ -75,7 +76,7 @@ let r;
 let client;
 let messagesPollId; // setInterval id that polls messages
 const streamOpts = {
-  subreddit: 'testingground4bots',
+  subreddit: REDDIT_SUBSCRIBED_SUBREDDIT,
   results: 100,
   pollTime: 2000
 };
