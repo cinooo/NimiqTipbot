@@ -314,9 +314,14 @@ ${messageFooter}`
         isRootComment
           ? linkAuthor // if it's a root comment, get the OP link author
           : await this.getCommentAuthorFromCommentName(parentId); // if it is a reply to a comment, get the parent id
-      const isNimTipReg = /\+[0-9]+\.?[0-9]{0,6} NIM[ ]?/mg;
+      const isNimTipReg = /\+([0-9]+\.?[0-9]{0,6}) NIM[ ]?/mg;
       const isNimTip = isNimTipReg.test(body);
-      const nimAmount = isNimTip ? body.match(isNimTipReg)[0] : 0;
+      let nimAmount = 0;
+      if (isNimTip) {
+        const matches = isNimTipReg.exec(body);
+        nimAmount = matches[1];
+      };
+      // const nimAmount = isNimTip ? body.match(isNimTipReg)[0] : 0;
 
       const parsedObj = {
         isRootComment,
