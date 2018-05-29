@@ -108,6 +108,10 @@ e.g. !tip @cino#0628 3`);
       // check if account balance of source is sufficient
       const { balance: userBalance, publicAddress: userAddress, privateKey } = await dynamo.getUserPublicAddress(authorId, $);
       const { publicAddress: destinationFriendlyAddress } = await dynamo.getUserPublicAddress(discordUserId, $);
+
+      if (userAddress === destinationFriendlyAddress) {
+        return reply(`You can't tip to the same wallet address`);
+      }
       if (userBalance >= nimAmount) {
         // has money, can proceed with tip
         await $.sendTransaction(privateKey, destinationFriendlyAddress, nimAmount);
@@ -135,7 +139,7 @@ async function getReplyMessageForWithdraw(messageId, authorId, args, content, $)
     return reply(`Wrong format for !withdraw command. Must follow the format of !withdraw [NIM Address]
 e.g. !withdraw NQ52 BCNT 9X0Y GX7N T86X 7ELG 9GQH U5N8 27FE`);
   }
-  const [withdrawDestinationArg] = args;
+  const withdrawDestinationArg = args.join(' ');
   // get the withdrawal amounts and address
   const withdrawDestinationReg = /NQ[A-Z0-9 ]*$/;
   const withdrawDestination = withdrawDestinationArg.trim().match(withdrawDestinationReg) ? withdrawDestinationArg.trim().match(withdrawDestinationReg)[0] : null;
