@@ -41,23 +41,10 @@ export default {
     console.log('Consensus established.');
     $.established = true;
     console.log('height:', $.blockchain.height);
-    // console.log('Address:', $.wallet.address.toUserFriendlyAddress());
-
-    // this._updateBalance();
-
-    // Recheck balance on every head change.
-    $.blockchain.on('head-changed', this._updateBalance.bind(this, $));
   },
 
   isEstablished() {
     return $.established;
-  },
-
-  async _updateBalance() {
-    if ($.isEstablished()) {
-      // const addresses = [$.wallet.address, 'NQ98 7PRX UB0T FURL F1B3 J07X H01P KD37 8FLD'];
-      // this._getBalance($.wallet.address.toUserFriendlyAddress());
-    }
   },
 
   _onBalanceChanged(account) {
@@ -70,7 +57,6 @@ export default {
   _onHeadChanged() {
     const height = $.blockchain.height;
     console.log(`Now at height ${height}.`);
-    // this._updateBalance($);
   },
 
   _onPeersChanged() {
