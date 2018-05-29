@@ -31,6 +31,6 @@ const startNimiq = async () => {
 };
 
 (async () => {
-  // await startNimiq();
-  await discord.start();
+  await startNimiq();
+  // await discord.start();
 })();
