@@ -1,3 +1,4 @@
+import nimiqHelper from '../nimiqHelper.js';
 const AWS = require('aws-sdk');
 AWS.config.region = process.env.REGION;
 const dynamo = new AWS.DynamoDB.DocumentClient();
@@ -99,4 +100,22 @@ export const updateTip = async (commentId, processed) => {
   } catch (e) {
     console.error('Error updateTip', e);
   }
+};
+
+// get a reddit user's public address, create one if it doesnt exist
+export async function getUserPublicAddress(authorName, $) {
+  const results = await queryUser(authorName);
+  const { privateKey, phrases, publicAddress } = results.Count === 0 ? await nimiqHelper.generateAddress() : results.Items[0];
+  if (results.Count === 0) {
+    console.log('User not found, creating new user', authorName);
+    // save the user if it is a newly generated one
+    await putUser({authorName, privateKey, publicAddress, phrases});
+  }
+  const balance = await $.getBalance(publicAddress);
+  return {
+    balance,
+    publicAddress,
+    privateKey,
+    phrases
+  };
 };

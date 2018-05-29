@@ -2,6 +2,7 @@ import './config.js';
 // const { fork } = require('child_process');
 import nimiqHelper from './nimiqHelper.js';
 import reddit from './redditHelper.js';
+import discord from './discordHelper.js';
 
 export const wait = s => new Promise(resolve => setTimeout(resolve, s * 1000));
 
@@ -22,38 +23,14 @@ const startNimiq = async () => {
       // poll comments!
       reddit.readComments($);
 
-      // const message = await reddit.getPrivateMessages();
-      // const message = {
-      //   authorName: 'NimiqTipbot',
-      //   subject: 'Deposit'
-      // };
-      // await reddit.handleInboxMessage(message, $);
+      // start the discord bot
+      discord.start($);
     }
   };
   await checkNimSynced();
 };
 
 (async () => {
-  // const response = await refreshToken(currentRefreshToken);
-  // redditReadComments();
-
-  // const wallet = await nimiqHelper.generateAddress();
-
-  // const message = {
-  //   authorName: 'cinooo1',
-  //   subject: 'Deposit'
-  // };
-  // await reddit.handleMessage(message);
-
-  await startNimiq();
-// await reddit.readMessages();
-  // console.log(wallet);
-
-  // // read private messages
-  // const message = await reddit.getPrivateMessages();
-  //
-  // await reddit.handleMessage(message);
-  //
-  // // polls messages
-  // await reddit.readMessages();
+  // await startNimiq();
+  await discord.start();
 })();

@@ -146,26 +146,8 @@ export default {
     });
   },
 
-  // get a reddit user's public address, create one if it doesnt exist
-  async getUserPublicAddress(authorName, $) {
-    const results = await dynamo.queryUser(authorName);
-    const { privateKey, phrases, publicAddress } = results.Count === 0 ? await nimiqHelper.generateAddress() : results.Items[0];
-    if (results.Count === 0) {
-      console.log('User not found, creating new user', authorName);
-      // save the user if it is a newly generated one
-      await dynamo.putUser({authorName, privateKey, publicAddress, phrases});
-    }
-    const balance = await $.getBalance(publicAddress);
-    return {
-      balance,
-      publicAddress,
-      privateKey,
-      phrases
-    };
-  },
-
   async getReplyMessageForDeposit(authorName, $) {
-    const { balance: userBalance, publicAddress: userAddress } = await this.getUserPublicAddress(authorName, $);
+    const { balance: userBalance, publicAddress: userAddress } = await dynamo.getUserPublicAddress(authorName, $);
     const replyMessage = `Your NIM address is: ${userAddress}
 
 Your current balance is ${userBalance}
@@ -212,7 +194,7 @@ ${messageFooter}`;
       };
     }
 
-    const { balance: userBalance, publicAddress: userAddress, privateKey } = await this.getUserPublicAddress(authorName, $);
+    const { balance: userBalance, publicAddress: userAddress, privateKey } = await dynamo.getUserPublicAddress(authorName, $);
     if (parseFloat(userBalance) < parseFloat(withdrawAmount)) {
       return {
         replyMessage: `The ${withdrawAmount} NIM you are trying to withdraw is more than the total amount available in your account (${userBalance} NIM))`,
@@ -232,7 +214,7 @@ ${messageFooter}`;
   },
 
   async getReplyMessageForBalance(authorName, $) {
-    const { balance: userBalance, publicAddress: userAddress } = await this.getUserPublicAddress(authorName, $);
+    const { balance: userBalance, publicAddress: userAddress } = await dynamo.getUserPublicAddress(authorName, $);
     const replyMessage = `Your NIM address is: ${userAddress}
 
 Your current balance is ${userBalance}
@@ -337,27 +319,27 @@ ${messageFooter}`
         if (hasNotBeenLogged) {
           // originating source
           // check if account balance of source is sufficient
-          const { balance: userBalance, publicAddress: userAddress, privateKey } = await this.getUserPublicAddress(authorName, $);
-          const { publicAddress: destinationFriendlyAddress } = await this.getUserPublicAddress(destinationAuthor, $);
+          const { balance: userBalance, publicAddress: userAddress, privateKey } = await dynamo.getUserPublicAddress(authorName, $);
+          const { publicAddress: destinationFriendlyAddress } = await dynamo.getUserPublicAddress(destinationAuthor, $);
           if (userBalance >= nimAmount) {
             // has money, can proceed with tip
             await $.sendTransaction(privateKey, destinationFriendlyAddress, nimAmount);
+            // log that comment has been paid
+            await dynamo.putTip(commentId, {
+              sourceAuthor: authorName,
+              sourceAddress: userAddress,
+              sourceBalance: userBalance,
+              destinationAuthor,
+              destinationAddress: destinationFriendlyAddress,
+              nimAmount,
+              linkPermalink
+            });
             // console.log(result);
             await this.replyComment(commentId, `You have successfully tipped ${destinationAuthor} ${nimAmount} NIM.`);
           } else {
             // no amount? post a reply
             await this.replyComment(commentId, 'No NIM balance found for your account please use the links to make a NIM deposit first.');
           }
-          // log that comment has been paid
-          await dynamo.putTip(commentId, {
-            sourceAuthor: authorName,
-            sourceAddress: userAddress,
-            sourceBalance: userBalance,
-            destinationAuthor,
-            destinationAddress: destinationFriendlyAddress,
-            nimAmount,
-            linkPermalink
-          });
         }
       }
     });
