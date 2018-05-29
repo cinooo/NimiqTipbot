@@ -75,8 +75,8 @@ let client;
 let messagesPollId; // setInterval id that polls messages
 const streamOpts = {
   subreddit: REDDIT_SUBSCRIBED_SUBREDDIT,
-  results: 100,
-  pollTime: 2000
+  results: 5,
+  pollTime: 5000
 };
 
 export default {
