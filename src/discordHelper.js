@@ -82,7 +82,7 @@ e.g. !tip @cino#0628 3`);
   }
   const discordUserId = matchesDiscordUser[1];
 
-  const isNimTipReg = /\+([0-9]+\.?[0-9]{0,6}) NIM[ ]?/mg;
+  const isNimTipReg = /\([0-9]+\.?[0-9]{0,6})/mg;
   const matches = isNimTipReg.exec(argsNimAmount);
   const isNimTip = matches !== null;
   const nimAmount = isNimTip ? matches[1] : 0;
