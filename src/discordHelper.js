@@ -29,8 +29,6 @@ const getBotCommandArguments = content => {
   return args.slice(1);
 };
 
-let $ = {};
-
 // format: NQXX XXXX XXXX ...
 function getNimDepositLink(address) {
   const safeUrl = NIMIQ_NETWORK === 'main' ? 'https://safe.nimiq.com/' : 'https://safe.nimiq-testnet.com/';
@@ -135,7 +133,7 @@ e.g. !tip @cino#0628 3`);
 };
 
 async function getReplyMessageForWithdraw(messageId, authorId, args, content, $) {
-  if (args.length !== 1) {
+  if (args.length !== 9) {
     return reply(`Wrong format for !withdraw command. Must follow the format of !withdraw [NIM Address]
 e.g. !withdraw NQ52 BCNT 9X0Y GX7N T86X 7ELG 9GQH U5N8 27FE`);
   }
