@@ -25,8 +25,8 @@ export default {
       $.established = false;
       console.error('Consensus lost');
     });
-    $.blockchain.on('head-changed', () => this._onHeadChanged($));
-    $.network.on('peers-changed', () => this._onPeersChanged($));
+    // $.blockchain.on('head-changed', () => this._onHeadChanged($));
+    // $.network.on('peers-changed', () => this._onPeersChanged($));
 
     $.network.connect();
 
