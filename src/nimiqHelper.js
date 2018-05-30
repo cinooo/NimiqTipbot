@@ -86,9 +86,9 @@ export default {
     const privateKey = wallet.keyPair.privateKey.toHex();
     const phrases = MnemonicPhrase.keyToMnemonic(privateKey);
     const publicAddress = wallet.address.toUserFriendlyAddress();
-    console.log(privateKey);
-    console.log(phrases);
-    console.log(publicAddress);
+    // console.log(privateKey);
+    // console.log(phrases);
+    console.log('New address created', publicAddress);
     return {
       privateKey,
       phrases,
@@ -114,28 +114,6 @@ export default {
 
   isValidFriendlyNimAddress(friendlyAddress) {
     return friendlyAddress.replace(/ /g, '').length === 36;
-  },
-
-  async _sendTransaction(privateKey, destinationFriendlyAddress, coins) {
-    console.log('sendTransaction', destinationFriendlyAddress, coins);
-    const destinationAddress = Nimiq.Address.fromUserFriendlyAddress(destinationFriendlyAddress);
-    const satoshis = Nimiq.Policy.coinsToSatoshis(coins);
-    // get the wallet of the author
-    const wallet = this.getWalletFromPrivateKey(privateKey);
-    // console.log('sendTransaction');
-    // console.log(wallet);
-    // console.log(destinationFriendlyAddress);
-    // console.log(destinationAddress);
-    // console.log(satoshis);
-    // console.log($.consensus.blockchain.head.height);
-    var transaction = wallet.createTransaction(
-      destinationAddress, // who we are sending to
-      satoshis, // amount in satoshi (no decimal format)
-      NIMIQ_TRANSACTION_FEE, // fee
-      $.consensus.blockchain.head.height);
-    const result = await $.consensus.relayTransaction(transaction);
-    // console.log('sendTransaction result', result);
-    return result;
   },
 
   async _sendTransaction(privateKey, destinationFriendlyAddress, coins) {

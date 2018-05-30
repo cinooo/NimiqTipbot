@@ -72,7 +72,7 @@ e.g. !tip @cino#0628 3`);
 
   const [argsUserId, argsNimAmount] = args;
 
-  const discordUseridReg = /<@([0-9]+)>/;
+  const discordUseridReg = /<@!?([0-9]+)>/;
   const matchesDiscordUser = discordUseridReg.exec(argsUserId);
   const isDiscordUser = matchesDiscordUser !== null;
   if (!isDiscordUser) {
@@ -126,7 +126,7 @@ e.g. !tip @cino#0628 3`);
         return reply(`Tipping ${discordUserId} ${nimAmount} NIM.`);
       } else {
         // no amount? post a reply
-        return reply('No NIM balance found for your account please use the links to make a NIM deposit first. Try: !deposit');
+        return reply('Insufficient balance, deposit more NIM deposit first. Try: !deposit. Current balance:', userBalance);
       }
     }
   }
@@ -171,7 +171,7 @@ export default {
     });
 
     client.on('message', async message => {
-      // console.log(message);
+      // console.log(message.content);
       const {
         id: messageId, // unique message id for reference
         content, // message body contents
@@ -184,7 +184,7 @@ export default {
       const command = getBotCommand(content);
       if (command) {
         const args = getBotCommandArguments(content);
-        console.log(`Detected bot command ${command}. Has args: ${args}`);
+        console.log(`Detected bot command ${command} from ${username}#${discriminator}. Has args: ${args}`);
         const { replyMessage, userAddress, withdrawDestination, withdrawAmount, privateKey } =
         command === BOT_COMMAND_HELP || command === BOT_COMMAND_COMMANDS ? getReplyMessageForHelp()
           : command === BOT_COMMAND_BALANCE || command === BOT_COMMAND_DEPOSIT ? await getReplyMessageForBalance(authorId, $)
