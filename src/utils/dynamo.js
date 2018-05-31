@@ -156,10 +156,55 @@ export const scan = async (table, lastEvaluatedKey, limit) => {
   return dynamo.scan(params).promise();
 };
 
-export const scanTips = async () => {
-  let response = await scan(DYNAMO_TABLE_TIPBOT_TRANSACTIONS, null, 2);
-  return {
-    items: response.Items,
-    count: response.Count
-  };
+const wait = s => new Promise(resolve => setTimeout(resolve, s * 1000));
+
+// export const fullTableScan = async (table, scanLimit = 50) => {
+//   let lastEvaluatedKey;
+//   let results = {
+//     items: [],
+//     count: 0
+//   };
+//   do {
+//     let response = await scan(table, lastEvaluatedKey, scanLimit);
+//     await wait(1);
+//     console.log(Object.keys(response));
+//     results.items = results.items.concat(response.Items);
+//     results.count += response.Count;
+//     console.log(results.count);
+//     lastEvaluatedKey = response.LastEvaluatedKey; // undefined if no more results left to scan
+//   } while (lastEvaluatedKey);
+//   return results;
+// };
+//
+// export const scanTips = async () => {
+//   let response = await scan(DYNAMO_TABLE_TIPBOT_TRANSACTIONS, null, 2);
+//   return {
+//     items: response.Items,
+//     count: response.Count
+//   };
+// };
+
+// export const fullTableScanTransactions = () => {
+//   const scanResults = fullTableScan(DYNAMO_TABLE_TIPBOT_TRANSACTIONS);
+//   const results = scanResults.filter(scanResult => {
+//     return
+//   })
+// };
+
+export const getTransactions = async (maxItems = 1) => {
+  let lastEvaluatedKey;
+  let items = [];
+  const newTransactions = transactions => transactions.filter(transaction => transaction.status === TIPS_STATUS_NEW);
+  do {
+    let response = await scan(DYNAMO_TABLE_TIPBOT_TRANSACTIONS, lastEvaluatedKey, maxItems);
+    await wait(1);
+    // console.log(Object.keys(response));
+    items = items.concat(response.Items);
+    lastEvaluatedKey = response.LastEvaluatedKey; // undefined if no more results left to scan
+
+    // only get transactions of New status
+    items = newTransactions(items);
+    items = items.slice(0, maxItems);
+  } while (lastEvaluatedKey && items.length < maxItems);
+  return items;
 };

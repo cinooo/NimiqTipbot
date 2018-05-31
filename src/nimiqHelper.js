@@ -9,7 +9,8 @@ let $ = {};
 const {
   NIMIQ_NETWORK,
   NIMIQ_TRANSACTION_FEE,
-  TRANSACTIONS_POLL_TIME
+  TRANSACTIONS_POLL_TIME,
+  TRANSACTIONS_MAX_ITEMS
 } = process.env;
 
 export default {
@@ -210,7 +211,7 @@ export default {
     const getNonPendingTips = (items) => items.filter(item => item.status === dynamo.TIPS_STATUS_NEW);
     //
     // scan tips table for non pending transactions
-    const results = await dynamo.scanTips();
+    const results = await dynamo.getTransactions(TRANSACTIONS_MAX_ITEMS);
     const unprocessedTips = getNonPendingTips(results.items);
     for (let i = 0; i < unprocessedTips.length; i++) {
       const tip = unprocessedTips[i];
