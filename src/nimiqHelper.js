@@ -167,7 +167,7 @@ export default {
       if (transaction.equals(tx2)) {
         console.log('Transaction mined', tx2.hash().toHex());
         if (fn) {
-          await fn(`✅ NIM successfully transacted, hash: ${tx2.hash().toHex()}`);
+          await fn(`NIM successfully transacted, hash: ${tx2.hash().toHex()}`);
         }
         console.log('deleteTransaction', tip, tip.commentId);
         // remove the record from dynamo
@@ -179,12 +179,11 @@ export default {
     $.consensus.subscribeAccounts([transaction.recipient]);
     try {
       await $.consensus.relayTransaction(transaction);
+      console.log('relayTransaction, waiting to confirm', transaction.hash().toHex());
     } catch (e) {
       console.error('Error encountered with relayTransaction', e);
       await dynamo.updateTransaction(tip.commentId, dynamo.TIPS_STATUS_ERROR);
     }
-    console.log('relayTransaction, waiting to confirm', transaction.hash().toHex());
-    // const result = await $.consensus.mempool.pushTransaction(transaction);
   },
 
   async replyChannel(replyMetadata, replyMessage) {
@@ -224,7 +223,7 @@ export default {
       // start the transaction send process
       const { balance: userBalance, publicAddress: userAddress, privateKey } = await dynamo.getUserPublicAddress(sourceAuthor, $);
       if (userBalance < nimAmount) {
-        await this.replyChannel(replyMetadata, `❌ Insufficient funds to make transaction.`);
+        await this.replyChannel(replyMetadata, `Insufficient funds to make transaction.`);
         await dynamo.deleteTransaction({ commentId: tip.commentId });
         return;
       }

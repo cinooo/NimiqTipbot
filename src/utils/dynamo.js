@@ -114,7 +114,7 @@ export const updateTransaction = async (commentId, status = TIPS_STATUS_PENDING)
       AttributeUpdates: {
         status: {
           Action: 'PUT',
-          Value: TIPS_STATUS_PENDING
+          Value: status
         }
       }
     };
