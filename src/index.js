@@ -3,6 +3,7 @@ import './config.js';
 import nimiqHelper from './nimiqHelper.js';
 import reddit from './redditHelper.js';
 import discord from './discordHelper.js';
+import * as dynamo from './utils/dynamo';
 
 export const wait = s => new Promise(resolve => setTimeout(resolve, s * 1000));
 
@@ -27,7 +28,7 @@ const startNimiq = async () => {
       discord.start($);
 
       // start the poll on transactions
-      nimiqHelper.pollTransactions($);
+      nimiqHelper.startPollTransactions($);
     }
   };
   await checkNimSynced();

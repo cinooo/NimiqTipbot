@@ -167,7 +167,7 @@ export default {
       if (transaction.equals(tx2)) {
         console.log('Transaction mined', tx2.hash().toHex());
         if (fn) {
-          await fn(`NIM successfully transacted, hash: ${tx2.hash().toHex()}`);
+          await fn(`✅ NIM successfully transacted, hash: ${tx2.hash().toHex()}`);
         }
         console.log('deleteTransaction', tip, tip.commentId);
         // remove the record from dynamo
@@ -241,6 +241,7 @@ export default {
 
   startPollTransactions(nimiqClient) {
     setInterval(async () => {
+      console.log('pollTransaction');
       $ = nimiqClient;
       await this.pollTransactions(nimiqClient);
     }, TRANSACTIONS_POLL_TIME);
