@@ -183,8 +183,9 @@ export default {
             : command === BOT_COMMAND_TIP ? await getReplyMessageForTip(messageId, authorId, args, content, $)
               : command === BOT_COMMAND_WITHDRAW ? await getReplyMessageForWithdraw(messageId, authorId, args, content, $) : {};
 
+        let newReplyMessage;
         if (replyMessage) {
-          this.postMessage(message, replyMessage);
+          newReplyMessage = await this.postMessage(message, replyMessage);
         }
 
         // need to record a tip for withdraw and tip commands
@@ -202,7 +203,7 @@ export default {
             replyMetadata: { // when the transaction later gets sent, this info is used to send the reply message back to user
               discord: {
                 channelId,
-                messageId
+                ...newReplyMessage && { messageId: newReplyMessage }
               }
             }
           });
@@ -214,7 +215,8 @@ export default {
   },
 
   async postMessage(message, replyMessage) {
-    message.reply(replyMessage);
+    const newReplyMessage = await message.reply(replyMessage);
+    return newReplyMessage;
   },
 
   listChannels() {
