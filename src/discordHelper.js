@@ -203,7 +203,7 @@ export default {
             replyMetadata: { // when the transaction later gets sent, this info is used to send the reply message back to user
               discord: {
                 channelId,
-                ...newReplyMessage && { messageId: newReplyMessage }
+                ...newReplyMessage && { messageId: newReplyMessage.id }
               }
             }
           });
