@@ -120,14 +120,6 @@ export default {
     return friendlyAddress.replace(/ /g, '').length === 36;
   },
 
-  isMempoolAvailable() {
-    return $.consensus.mempool.getTransactions().length < Nimiq.Mempool.SIZE_MAX;
-  },
-
-  canSendFreeTransaction(senderAddress) {
-    return $.consensus.mempool.getTransactionsBySender(senderAddress).length >= Nimiq.Mempool.FREE_TRANSACTIONS_PER_SENDER_MAX;
-  },
-
   // transactions can be sent from:
   // Discord !withdraw
   // Discord !tip
@@ -151,8 +143,11 @@ export default {
     // console.log(satoshis);
     // console.log($.consensus.blockchain.head.height);
 
+    const isMempoolAvailable = ($) => $.consensus.mempool.getTransactions().length < Nimiq.Mempool.SIZE_MAX;
+    const canSendFreeTransaction = ($, senderAddress) => $.consensus.mempool.getTransactionsBySender(senderAddress).length >= Nimiq.Mempool.FREE_TRANSACTIONS_PER_SENDER_MAX;
+
     const senderAddress = wallet.address;
-    if (!this.isMempoolAvailable() || !this.canSendFreeTransaction(senderAddress)) {
+    if (!isMempoolAvailable($) || !canSendFreeTransaction($, senderAddress)) {
       console.log(`Mempool transactions full or no free transactions left`);
       // free up for next round of polling
       await dynamo.updateTransaction(tip.commentId, dynamo.TIPS_STATUS_NEW);
@@ -237,9 +232,10 @@ export default {
     };
   },
 
-  startPollTransactions($) {
+  startPollTransactions(nimiqClient) {
     setInterval(async () => {
-      await this.pollTransactions($);
+      $ = nimiqClient;
+      await this.pollTransactions(nimiqClient);
     }, TRANSACTIONS_POLL_TIME);
   }
 };
