@@ -147,15 +147,15 @@ export default {
       console.log('isMempoolAvailable');
       console.log(Object.keys($.mempool));
       console.log($.mempool.getTransactions);
-      console.log($.mempool.getTransactions());
+      console.log($.mempool.getTransactions(Nimiq.Mempool.SIZE_MAX));
       return $.mempool.getTransactions().length < Nimiq.Mempool.SIZE_MAX;
     }
     const canSendFreeTransaction = ($, senderAddress) => {
       console.log('canSendFreeTransaction');
       console.log(Object.keys($.mempool));
-      console.log($.mempool.getTransactionsBySender);
-      console.log($.mempool.getTransactionsBySender(senderAddress));
-      return $.mempool.getTransactionsBySender(senderAddress).length >= Nimiq.Mempool.FREE_TRANSACTIONS_PER_SENDER_MAX;
+      console.log($.mempool.getPendingTransactions);
+      console.log($.mempool.getPendingTransactions(senderAddress));
+      return $.mempool.getPendingTransactions(senderAddress).length >= Nimiq.Mempool.FREE_TRANSACTIONS_PER_SENDER_MAX;
     }
 
     const senderAddress = wallet.address;
