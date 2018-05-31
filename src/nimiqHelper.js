@@ -212,7 +212,7 @@ export default {
     //
     // scan tips table for non pending transactions
     const results = await dynamo.getTransactions(TRANSACTIONS_MAX_ITEMS);
-    const unprocessedTips = getNonPendingTips(results.items);
+    const unprocessedTips = getNonPendingTips(results);
     for (let i = 0; i < unprocessedTips.length; i++) {
       const tip = unprocessedTips[i];
       const { commentId, sourceAuthor, nimAmount, destinationAddress, replyMetadata } = tip;
