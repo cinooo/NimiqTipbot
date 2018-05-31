@@ -11,6 +11,7 @@ const {
 
 export const TIPS_STATUS_NEW = 'New';
 export const TIPS_STATUS_PENDING = 'Pending';
+export const TIPS_STATUS_ERROR = 'Error';
 export const TIPS_STATUS_COMPLETE = 'Complete';
 
 export const query = (params) => {

@@ -143,26 +143,15 @@ export default {
     // console.log(satoshis);
     // console.log($.consensus.blockchain.head.height);
 
-    const isMempoolAvailable = ($) => {
-      console.log('isMempoolAvailable');
-      console.log(Object.keys($.mempool));
-      console.log($.mempool.getTransactions);
-      console.log($.mempool.getTransactions(Nimiq.Mempool.SIZE_MAX));
-      return $.mempool.getTransactions().length < Nimiq.Mempool.SIZE_MAX;
-    }
-    const canSendFreeTransaction = ($, senderAddress) => {
-      console.log('canSendFreeTransaction');
-      console.log(Object.keys($.mempool));
-      console.log($.mempool.getPendingTransactions);
-      console.log($.mempool.getPendingTransactions(senderAddress));
-      return $.mempool.getPendingTransactions(senderAddress).length >= Nimiq.Mempool.FREE_TRANSACTIONS_PER_SENDER_MAX;
-    }
+    const isMempoolAvailable = ($) => $.mempool.getTransactions().length < Nimiq.Mempool.SIZE_MAX;
+    const canSendFreeTransaction = ($, senderAddress) => $.mempool.getPendingTransactions(senderAddress).length < Nimiq.Mempool.FREE_TRANSACTIONS_PER_SENDER_MAX;
 
     const senderAddress = wallet.address;
-    if (!isMempoolAvailable($) || !canSendFreeTransaction($, senderAddress)) {
+    if (isMempoolAvailable($) === false || canSendFreeTransaction($, senderAddress) === false) {
       console.log(`Mempool transactions full or no free transactions left`);
       // free up for next round of polling
       await dynamo.updateTransaction(tip.commentId, dynamo.TIPS_STATUS_NEW);
+      return;
     }
 
     // else proceed with the free transaction
@@ -187,7 +176,12 @@ export default {
       }
     });
     $.consensus.subscribeAccounts([transaction.recipient]);
-    await $.consensus.relayTransaction(transaction);
+    try {
+      await $.consensus.relayTransaction(transaction);
+    } catch (e) {
+      console.error('Error encountered with relayTransaction', e);
+      await dynamo.updateTransaction(tip.commentId, dynamo.TIPS_STATUS_ERROR);
+    }
     console.log('relayTransaction, waiting to confirm', transaction.hash().toHex());
     // const result = await $.consensus.mempool.pushTransaction(transaction);
   },
