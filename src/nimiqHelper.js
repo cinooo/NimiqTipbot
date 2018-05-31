@@ -143,8 +143,20 @@ export default {
     // console.log(satoshis);
     // console.log($.consensus.blockchain.head.height);
 
-    const isMempoolAvailable = ($) => $.consensus.mempool.getTransactions().length < Nimiq.Mempool.SIZE_MAX;
-    const canSendFreeTransaction = ($, senderAddress) => $.consensus.mempool.getTransactionsBySender(senderAddress).length >= Nimiq.Mempool.FREE_TRANSACTIONS_PER_SENDER_MAX;
+    const isMempoolAvailable = ($) => {
+      console.log('isMempoolAvailable');
+      console.log(Object.keys($.mempool));
+      console.log($.mempool.getTransactions);
+      console.log($.mempool.getTransactions());
+      return $.mempool.getTransactions().length < Nimiq.Mempool.SIZE_MAX;
+    }
+    const canSendFreeTransaction = ($, senderAddress) => {
+      console.log('canSendFreeTransaction');
+      console.log(Object.keys($.mempool));
+      console.log($.mempool.getTransactionsBySender);
+      console.log($.mempool.getTransactionsBySender(senderAddress));
+      return $.mempool.getTransactionsBySender(senderAddress).length >= Nimiq.Mempool.FREE_TRANSACTIONS_PER_SENDER_MAX;
+    }
 
     const senderAddress = wallet.address;
     if (!isMempoolAvailable($) || !canSendFreeTransaction($, senderAddress)) {
