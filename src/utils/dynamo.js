@@ -55,7 +55,7 @@ export const deleteItem = (table, key) => {
 };
 
 export const deleteTransaction = key => {
-  return dynamo.deleteItem(DYNAMO_TABLE_TIPBOT_TRANSACTIONS, key);
+  return deleteItem(DYNAMO_TABLE_TIPBOT_TRANSACTIONS, key);
 };
 
 export const putUser = async ({ authorName, privateKey, phrases, publicAddress }, time = new Date().getTime()) => {
