@@ -171,7 +171,7 @@ export default {
         }
         console.log('deleteTransaction', tip, tip.commentId);
         // remove the record from dynamo
-        await dynamo.deleteTransaction(tip.commentId);
+        await dynamo.deleteTransaction({ commentId: tip.commentId });
         await dynamo.archiveTransaction({ ...tip, transactionHash: tx2.hash().toHex() });
         $.mempool.off('transaction-mined', id);
       }
@@ -225,7 +225,7 @@ export default {
       const { balance: userBalance, publicAddress: userAddress, privateKey } = await dynamo.getUserPublicAddress(sourceAuthor, $);
       if (userBalance < nimAmount) {
         await this.replyChannel(replyMetadata, `❌ Insufficient funds to make transaction.`);
-        await dynamo.deleteTransaction(commentId);
+        await dynamo.deleteTransaction({ commentId: tip.commentId });
         return;
       }
 
