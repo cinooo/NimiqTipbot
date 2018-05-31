@@ -88,42 +88,30 @@ e.g. !tip @cino#0628 3`);
     return reply(`Please input a valid NIM amount in the format of X.XX e.g. 3 or 0.0008`);
   }
 
-  const parsedObj = {
-    sourceAuthor: authorId,
-    destinationAuthor: discordUserId,
-    body: content,
-    isNimTip,
-    nimAmount
-  };
-  console.log(JSON.stringify(parsedObj, null, 2));
-
   if (isNimTip) {
     // check to comment id to see if its already paid
-    const loggedComment = await dynamo.queryTip(messageId);
+    const loggedComment = await dynamo.queryTransaction(messageId);
     const hasNotBeenLogged = loggedComment.Count === 0;
     if (hasNotBeenLogged) {
       // originating source
       // check if account balance of source is sufficient
-      const { balance: userBalance, publicAddress: userAddress, privateKey } = await dynamo.getUserPublicAddress(authorId, $);
-      const { publicAddress: destinationFriendlyAddress } = await dynamo.getUserPublicAddress(discordUserId, $);
+      const { balance: userBalance, publicAddress: sourceAddress, privateKey } = await dynamo.getUserPublicAddress(authorId, $);
+      const { publicAddress: destinationAddress } = await dynamo.getUserPublicAddress(discordUserId, $);
 
-      if (userAddress === destinationFriendlyAddress) {
+      if (sourceAddress === destinationAddress) {
         return reply(`You can't tip to the same wallet address`);
       }
       if (userBalance >= nimAmount) {
-        // has money, can proceed with tip
-        await $.sendTransaction(privateKey, destinationFriendlyAddress, nimAmount);
-        // log that comment has been paid
-        await dynamo.putTip(messageId, {
+        return {
+          replyMessage: `Processing tip to ${discordUserId} for ${nimAmount} NIM.`,
           sourceAuthor: authorId,
-          sourceAddress: userAddress,
+          sourceAddress,
           sourceBalance: userBalance,
           destinationAuthor: discordUserId,
-          destinationAddress: destinationFriendlyAddress,
+          destinationAddress,
+          privateKey,
           nimAmount
-        });
-        // console.log(result);
-        return reply(`Tipping ${discordUserId} ${nimAmount} NIM.`);
+        };
       } else {
         // no amount? post a reply
         return reply('Insufficient balance, deposit more NIM deposit first. Try: !deposit. Current balance:', userBalance);
@@ -140,22 +128,25 @@ e.g. !withdraw NQ52 BCNT 9X0Y GX7N T86X 7ELG 9GQH U5N8 27FE`);
   const withdrawDestinationArg = args.join(' ');
   // get the withdrawal amounts and address
   const withdrawDestinationReg = /NQ[A-Z0-9 ]*$/;
-  const withdrawDestination = withdrawDestinationArg.trim().match(withdrawDestinationReg) ? withdrawDestinationArg.trim().match(withdrawDestinationReg)[0] : null;
-  if (withdrawDestination === null || !nimiqHelper.isValidFriendlyNimAddress(withdrawDestination)) {
+  const destinationAddress = withdrawDestinationArg.trim().match(withdrawDestinationReg) ? withdrawDestinationArg.trim().match(withdrawDestinationReg)[0] : null;
+  if (destinationAddress === null || !nimiqHelper.isValidFriendlyNimAddress(destinationAddress)) {
     return reply(`Encountered a problem reading the NIM withdrawal address`);
   }
 
-  const { balance: userBalance, publicAddress: userAddress, privateKey } = await dynamo.getUserPublicAddress(authorId, $);
-  if (parseFloat(userBalance) === 0) {
+  const { balance: sourceBalance, publicAddress: sourceAddress, privateKey } = await dynamo.getUserPublicAddress(authorId, $);
+  if (parseFloat(sourceBalance) === 0) {
     return reply(`Insufficient NIM in balance.`);
   }
 
   // otherwise message saying process the withdraw request!
   return {
-    replyMessage: `Processing your withdrawal of ${userBalance} NIM to ${withdrawDestination}`,
-    userAddress,
-    withdrawDestination,
-    withdrawAmount: userBalance,
+    replyMessage: `Processing your withdrawal of ${sourceBalance} NIM to ${destinationAddress}`,
+    sourceAuthor: authorId,
+    sourceAddress,
+    sourceBalance,
+    destinationAuthor: authorId,
+    destinationAddress,
+    nimAmount: sourceBalance,
     privateKey
   };
 };
@@ -166,12 +157,9 @@ export default {
 
     client.on('ready', () => {
       console.log(`Logged in as ${client.user.tag}!`);
-      // this.listChannels();
-      // const textChannels = this.getTextChannels();
     });
 
     client.on('message', async message => {
-      // console.log(message.content);
       const {
         id: messageId, // unique message id for reference
         content, // message body contents
@@ -179,26 +167,45 @@ export default {
           id: authorId, // unique id for author
           username, // pretty username
           discriminator // unique identifier for user name
+        },
+        channel: {
+          id: channelId
         }
       } = message;
+      // console.log(channelId, messageId, content);
       const command = getBotCommand(content);
       if (command) {
         const args = getBotCommandArguments(content);
         console.log(`Detected bot command ${command} from ${username}#${discriminator}. Has args: ${args}`);
-        const { replyMessage, userAddress, withdrawDestination, withdrawAmount, privateKey } =
+        const { replyMessage, sourceAuthor, sourceAddress, destinationAuthor, destinationAddress, sourceBalance, nimAmount, privateKey } =
         command === BOT_COMMAND_HELP || command === BOT_COMMAND_COMMANDS ? getReplyMessageForHelp()
           : command === BOT_COMMAND_BALANCE || command === BOT_COMMAND_DEPOSIT ? await getReplyMessageForBalance(authorId, $)
             : command === BOT_COMMAND_TIP ? await getReplyMessageForTip(messageId, authorId, args, content, $)
               : command === BOT_COMMAND_WITHDRAW ? await getReplyMessageForWithdraw(messageId, authorId, args, content, $) : {};
+
         if (replyMessage) {
           this.postMessage(message, replyMessage);
         }
 
-        if (command === BOT_COMMAND_WITHDRAW && typeof privateKey !== 'undefined' && typeof withdrawDestination !== 'undefined' && typeof withdrawAmount !== 'undefined') {
-          console.log(`Performing withdrawal from ${username}#${discriminator} ${userAddress} to ${withdrawDestination} of NIM amount: ${withdrawAmount}`);
-          // process withdrawal
-          const result = await $.sendTransaction(privateKey, withdrawDestination, withdrawAmount);
-          return result;
+        // need to record a tip for withdraw and tip commands
+        if (typeof privateKey !== 'undefined' && typeof destinationAddress !== 'undefined' && typeof nimAmount !== 'undefined') {
+          console.log(`Recording discord tip amount for ${sourceAuthor} for ${nimAmount} to ${destinationAddress}`);
+          // log that comment has been paid
+          await dynamo.putTransaction(messageId, {
+            sourceAuthor,
+            sourceAddress,
+            sourceBalance,
+            destinationAuthor,
+            destinationAddress,
+            privateKey,
+            nimAmount,
+            replyMetadata: { // when the transaction later gets sent, this info is used to send the reply message back to user
+              discord: {
+                channelId,
+                messageId
+              }
+            }
+          });
         }
       }
     });
@@ -217,8 +224,20 @@ export default {
   },
 
   getTextChannels() {
-    return client.channels.values().filter(entry => {
-      return entry.type === 'text';
-    });
+    // console.log(client.channels.values());
+    // return client.channels.entries().filter(entry => {
+    //   return entry.type === 'text';
+    // });
+  },
+
+  async editMessage(channelId, messageId, updatedContent) {
+    const channel = client.channels.get(channelId);
+    // console.log(channel);
+    // const sentMessage = await channel.send('yoyoyoyoyo');
+    const sentMessage = await channel.fetchMessage(messageId);
+    await sentMessage.edit(`${sentMessage.content}
+${updatedContent}`);
+    // const textChannels = this.getTextChannels();
+    // console.log(textChannels);
   }
 };

@@ -1,11 +1,15 @@
 import Nimiq from '@nimiq/core';
 
+import reddit from './redditHelper';
+import discord from './discordHelper';
 import MnemonicPhrase from './phrase.js';
+import * as dynamo from './utils/dynamo';
 let $ = {};
 
 const {
   NIMIQ_NETWORK,
-  NIMIQ_TRANSACTION_FEE
+  NIMIQ_TRANSACTION_FEE,
+  TRANSACTIONS_POLL_TIME
 } = process.env;
 
 export default {
@@ -116,18 +120,45 @@ export default {
     return friendlyAddress.replace(/ /g, '').length === 36;
   },
 
-  async _sendTransaction(privateKey, destinationFriendlyAddress, coins) {
+  isMempoolAvailable() {
+    return $.consensus.mempool.getTransactions().length < Nimiq.Mempool.SIZE_MAX;
+  },
+
+  canSendFreeTransaction(senderAddress) {
+    return $.consensus.mempool.getTransactionsBySender(senderAddress).length >= Nimiq.Mempool.FREE_TRANSACTIONS_PER_SENDER_MAX;
+  },
+
+  // transactions can be sent from:
+  // Discord !withdraw
+  // Discord !tip
+  // Reddit withdraw from personal message
+  // Reddit tip in comments
+  async _sendTransaction(privateKey, destinationFriendlyAddress, coins, tip, fn) {
+    if (!this.isEstablished()) {
+      return console.log(`Can't send transactions when consensus not established`);
+    }
+
     console.log('sendTransaction', destinationFriendlyAddress, coins);
     const destinationAddress = Nimiq.Address.fromUserFriendlyAddress(destinationFriendlyAddress);
     const satoshis = Nimiq.Policy.coinsToSatoshis(coins);
     // get the wallet of the author
     const wallet = this.getWalletFromPrivateKey(privateKey);
+
     // console.log('sendTransaction');
     // console.log(wallet);
     // console.log(destinationFriendlyAddress);
     // console.log(destinationAddress);
     // console.log(satoshis);
     // console.log($.consensus.blockchain.head.height);
+
+    const senderAddress = wallet.address;
+    if (!this.isMempoolAvailable() || !this.canSendFreeTransaction(senderAddress)) {
+      console.log(`Mempool transactions full or no free transactions left`);
+      // free up for next round of polling
+      await dynamo.updateTransaction(tip.commentId, dynamo.TIPS_STATUS_NEW);
+    }
+
+    // else proceed with the free transaction
     var transaction = wallet.createTransaction(
       destinationAddress, // who we are sending to
       satoshis, // amount in satoshi (no decimal format)
@@ -135,9 +166,16 @@ export default {
       $.consensus.blockchain.head.height);
     // const result = await $.consensus.relayTransaction(transaction);
     // console.log('sendTransaction result', result);
-    const id = $.mempool.on('transaction-mined', tx2 => {
+    const id = $.mempool.on('transaction-mined', async tx2 => {
       if (transaction.equals(tx2)) {
         console.log('Transaction mined', tx2.hash().toHex());
+        if (fn) {
+          await fn(`NIM successfully transacted, hash: ${tx2.hash().toHex()}`);
+        }
+
+        // remove the record from dynamo
+        await dynamo.deleteTransaction(tip.commentId);
+        await dynamo.archiveTransaction({ ...tip, transactionHash: tx2.hash().toHex() });
         $.mempool.off('transaction-mined', id);
       }
     });
@@ -147,17 +185,61 @@ export default {
     // const result = await $.consensus.mempool.pushTransaction(transaction);
   },
 
-  followTransaction(tx) {
-    $.consensus.subscribeAccounts([tx.recipient]);
-    console.logLog.i('TX', `Waiting for Nimiq transaction [${tx.hash().toHex()}] to confirm, please wait...`);
-    const id = $.mempool.on('transaction-mined', tx2 => {
-      if (tx.equals(tx2)) {
-        console.log('TX', `Nimiq transaction [${tx.hash().toHex()}] confirmed!`);
+  async replyChannel(replyMetadata, replyMessage) {
+    const { reddit: redditMetadata, discord: discordMetadata } = replyMetadata;
+    // this is posting a personal message to a reddit user's inbox for withdrawals
+    if (redditMetadata && redditMetadata.authorName && redditMetadata.subject) {
+      const { authorName, subject } = redditMetadata;
+      await reddit.postMessage(authorName, subject, replyMessage);
+    }
 
-        console.log('transaction-mined id off', id);
-        $.mempool.off('transaction-mined', id);
+    // this is editing a comment for normal tipping
+    if (redditMetadata && redditMetadata.commentId) {
+      await reddit.editComment(redditMetadata.commentId, replyMessage);
+    }
+
+    // transaction or withdrawal update for discord, updates the initial bot message reply
+    if (discordMetadata && discordMetadata.channelId && discordMetadata.messageId) {
+      const { channelId, messageId } = discordMetadata;
+      await discord.editMessage(channelId, messageId, replyMessage);
+    }
+  },
+
+  async pollTransactions($) {
+    const getNonPendingTips = (items) => items.filter(item => item.status === dynamo.TIPS_STATUS_NEW);
+    //
+    // scan tips table for non pending transactions
+    const results = await dynamo.scanTips();
+    const unprocessedTips = getNonPendingTips(results.items);
+    for (let i = 0; i < unprocessedTips.length; i++) {
+      const tip = unprocessedTips[i];
+      const { commentId, sourceAuthor, nimAmount, destinationAddress, replyMetadata } = tip;
+      console.log(commentId);
+
+      // set it to pending to prevent it being picked up by future poll processes
+      await dynamo.updateTransaction(commentId, dynamo.TIPS_STATUS_PENDING);
+
+      // start the transaction send process
+      const { balance: userBalance, publicAddress: userAddress, privateKey } = await dynamo.getUserPublicAddress(sourceAuthor, $);
+      if (userBalance < nimAmount) {
+        await this.replyChannel(replyMetadata, `❌ Insufficient funds to make transaction.`);
+        await dynamo.deleteTransaction(commentId);
+        return;
       }
-    });
-    console.log('transaction-mined id on', id);
+
+      const replyFn = ((replyMetadata) => {
+        return (replyMessage) => {
+          this.replyChannel(replyMetadata, replyMessage);
+        };
+      })(replyMetadata);
+
+      await $.sendTransaction(privateKey, destinationAddress, nimAmount, tip, replyFn);
+    };
+  },
+
+  startPollTransactions($) {
+    setInterval(async () => {
+      await this.pollTransactions($);
+    }, TRANSACTIONS_POLL_TIME);
   }
 };

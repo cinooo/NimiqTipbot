@@ -25,6 +25,9 @@ const startNimiq = async () => {
 
       // start the discord bot
       discord.start($);
+
+      // start the poll on transactions
+      // nimiqHelper.pollTransactions($);
     }
   };
   await checkNimSynced();

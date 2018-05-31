@@ -5,8 +5,13 @@ const dynamo = new AWS.DynamoDB.DocumentClient();
 
 const {
   DYNAMO_TABLE_TIPBOT_USERS,
-  DYNAMO_TABLE_TIPBOT_TIPS
+  DYNAMO_TABLE_TIPBOT_TRANSACTIONS,
+  DYNAMO_TABLE_TIPBOT_TRANSACTIONS_ARCHIVED
 } = process.env;
+
+export const TIPS_STATUS_NEW = 'New';
+export const TIPS_STATUS_PENDING = 'Pending';
+export const TIPS_STATUS_COMPLETE = 'Complete';
 
 export const query = (params) => {
   return dynamo.query(params).promise().catch((e) => {
@@ -27,9 +32,9 @@ export const queryUser = authorName => {
   return query(params);
 };
 
-export const queryTip = commentId => {
+export const queryTransaction = commentId => {
   const params = {
-    TableName: DYNAMO_TABLE_TIPBOT_TIPS,
+    TableName: DYNAMO_TABLE_TIPBOT_TRANSACTIONS,
     KeyConditionExpression: 'commentId = :commentId',
     ExpressionAttributeValues: {
       ':commentId': commentId
@@ -48,6 +53,10 @@ export const deleteItem = (table, key) => {
   return dynamo.delete(params).promise();
 };
 
+export const deleteTransaction = key => {
+  return dynamo.deleteItem(DYNAMO_TABLE_TIPBOT_TRANSACTIONS, key);
+};
+
 export const putUser = async ({ authorName, privateKey, phrases, publicAddress }, time = new Date().getTime()) => {
   let params = {
     TableName: `${DYNAMO_TABLE_TIPBOT_USERS}`,
@@ -64,11 +73,12 @@ export const putUser = async ({ authorName, privateKey, phrases, publicAddress }
   return dynamo.put(params).promise();
 };
 
-export const putTip = async (commentId, loggedDetails, time = new Date().getTime()) => {
+export const putTransaction = async (commentId, loggedDetails, time = new Date().getTime()) => {
   let params = {
-    TableName: `${DYNAMO_TABLE_TIPBOT_TIPS}`,
+    TableName: `${DYNAMO_TABLE_TIPBOT_TRANSACTIONS}`,
     Item: {
       commentId,
+      status: TIPS_STATUS_NEW,
       ...loggedDetails,
       createdat: time,
       updatedat: time
@@ -79,17 +89,31 @@ export const putTip = async (commentId, loggedDetails, time = new Date().getTime
   return dynamo.put(params).promise();
 };
 
-export const updateTip = async (commentId, processed) => {
+export const archiveTransaction = async (loggedDetails, time = new Date().getTime()) => {
+  let params = {
+    TableName: `${DYNAMO_TABLE_TIPBOT_TRANSACTIONS_ARCHIVED}`,
+    Item: {
+      ...loggedDetails,
+      status: TIPS_STATUS_COMPLETE,
+      updatedat: time
+    }
+  };
+
+  // Need to consider what to do if dynamo put fails
+  return dynamo.put(params).promise();
+};
+
+export const updateTransaction = async (commentId, status = TIPS_STATUS_PENDING) => {
   try {
     const params = {
-      TableName: `${DYNAMO_TABLE_TIPBOT_TIPS}`,
+      TableName: `${DYNAMO_TABLE_TIPBOT_TRANSACTIONS}`,
       Key: {
         commentId
       },
       AttributeUpdates: {
-        processed: {
+        status: {
           Action: 'PUT',
-          Value: processed
+          Value: TIPS_STATUS_PENDING
         }
       }
     };
@@ -98,7 +122,7 @@ export const updateTip = async (commentId, processed) => {
       return Promise.resolve();
     });
   } catch (e) {
-    console.error('Error updateTip', e);
+    console.error('Error updateTransaction', e);
   }
 };
 
@@ -117,5 +141,24 @@ export async function getUserPublicAddress(authorName, $) {
     publicAddress,
     privateKey,
     phrases
+  };
+};
+
+export const scan = async (table, lastEvaluatedKey, limit) => {
+  const params = {
+    'TableName': table,
+    ...lastEvaluatedKey && {'ExclusiveStartKey': lastEvaluatedKey},
+    'Select': 'ALL_ATTRIBUTES',
+    ...typeof limit !== 'undefined' && {'Limit': limit},
+    'ConsistentRead': true // takes into account writes since scan started
+  };
+  return dynamo.scan(params).promise();
+};
+
+export const scanTips = async () => {
+  let response = await scan(DYNAMO_TABLE_TIPBOT_TRANSACTIONS, null, 2);
+  return {
+    items: response.Items,
+    count: response.Count
   };
 };

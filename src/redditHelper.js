@@ -186,29 +186,32 @@ ${messageFooter}`;
       };
     }
     const withdrawDestinationReg = /NQ[A-Z0-9 ]*$/;
-    const withdrawDestination = chunks[2].trim().match(withdrawDestinationReg) ? chunks[2].trim().match(withdrawDestinationReg)[0] : null;
-    if (withdrawDestination === null || !nimiqHelper.isValidFriendlyNimAddress(withdrawDestination)) {
+    const destinationAddress = chunks[2].trim().match(withdrawDestinationReg) ? chunks[2].trim().match(withdrawDestinationReg)[0] : null;
+    if (destinationAddress === null || !nimiqHelper.isValidFriendlyNimAddress(destinationAddress)) {
       return {
         replyMessage: `Encountered a problem reading the NIM withdrawal address`,
         replySubject
       };
     }
 
-    const { balance: userBalance, publicAddress: userAddress, privateKey } = await dynamo.getUserPublicAddress(authorName, $);
-    if (parseFloat(userBalance) < parseFloat(withdrawAmount)) {
+    const { balance: sourceBalance, publicAddress: sourceAddress, privateKey } = await dynamo.getUserPublicAddress(authorName, $);
+    if (parseFloat(sourceBalance) < parseFloat(withdrawAmount)) {
       return {
-        replyMessage: `The ${withdrawAmount} NIM you are trying to withdraw is more than the total amount available in your account (${userBalance} NIM))`,
+        replyMessage: `The ${withdrawAmount} NIM you are trying to withdraw is more than the total amount available in your account (${sourceBalance} NIM))`,
         replySubject
       };
     }
 
     // otherwise message saying process the withdraw request!
     return {
-      replyMessage: `Processing your withdrawal of ${withdrawAmount} NIM to ${withdrawDestination}`,
+      replyMessage: `Processing your withdrawal of ${withdrawAmount} NIM to ${destinationAddress}`,
       replySubject,
-      userAddress,
-      withdrawDestination,
-      withdrawAmount,
+      sourceAuthor: authorName,
+      sourceAddress,
+      sourceBalance,
+      destinationAuthor: authorName,
+      destinationAddress,
+      nimAmount: withdrawAmount,
       privateKey
     };
   },
@@ -244,19 +247,33 @@ ${messageFooter}`;
   async handleInboxMessage(message, $) {
     const { subject, authorName, body } = message;
     console.log('handleInboxMessage', message);
-    const { replyMessage, replySubject, userAddress, withdrawDestination, withdrawAmount, privateKey } = subject === REDDIT.TOPICS.DEPOSIT ? await this.getReplyMessageForDeposit(authorName, $)
-      : subject === REDDIT.TOPICS.WITHDRAW ? await this.getReplyMessageForWithdraw(authorName, body, $)
-        : subject === REDDIT.TOPICS.BALANCE ? await this.getReplyMessageForBalance(authorName, $) : {};
+    const { replyMessage, replySubject, sourceAuthor, sourceAddress, destinationAuthor, destinationAddress, sourceBalance, nimAmount, privateKey } =
+      subject === REDDIT.TOPICS.DEPOSIT ? await this.getReplyMessageForDeposit(authorName, $)
+        : subject === REDDIT.TOPICS.WITHDRAW ? await this.getReplyMessageForWithdraw(authorName, body, $)
+          : subject === REDDIT.TOPICS.BALANCE ? await this.getReplyMessageForBalance(authorName, $) : {};
+
     if (replyMessage && replySubject) {
       await this.postMessage(authorName, replySubject, replyMessage);
     }
 
-    if (subject === REDDIT.TOPICS.WITHDRAW && typeof privateKey !== 'undefined' && typeof withdrawDestination !== 'undefined' && typeof withdrawAmount !== 'undefined') {
-      console.log('Legit withdrawal', withdrawDestination, withdrawAmount);
-      // console.log('$', $);
-      // process withdrawal
-      const result = await $.sendTransaction(privateKey, withdrawDestination, withdrawAmount);
-      return result;
+    if (subject === REDDIT.TOPICS.WITHDRAW && typeof privateKey !== 'undefined' && typeof withdrawDestination !== 'undefined' && typeof nimAmount !== 'undefined') {
+      // log the withdrawal, it will be picked up later by a separate tip polling process
+      console.log(`Recording reddit withdrawal from ${sourceAuthor} for the amount ${nimAmount} to ${destinationAddress}`);
+      await dynamo.putTransaction(message.id, {
+        sourceAuthor,
+        sourceAddress,
+        sourceBalance,
+        destinationAuthor,
+        destinationAddress,
+        privateKey,
+        nimAmount,
+        replyMetadata: { // when the transaction later gets sent, this info is used to send the reply message back to user
+          reddit: {
+            authorName,
+            subject: replySubject
+          }
+        }
+      });
     }
   },
 
@@ -269,6 +286,21 @@ ${messageFooter}`
     return result;
   },
 
+  async editComment(commentId, editText) {
+    const comment = await this.R().get_comment(commentId);
+    const body = await comment.body;
+    // console.log('body', body);
+    const chunks = body.split('\n');
+    // console.log(chunks);
+    const newBody = `${chunks[0]}
+
+${editText}
+
+${messageFooter}`;
+    await comment.edit(newBody);
+    // expect(await comment.refresh().body).to.equal(new_text);
+  },
+
   readComments($) {
     const comments = this.Client().CommentStream(streamOpts);
 
@@ -279,17 +311,15 @@ ${messageFooter}`
         id: commentId,
         body, // contains the text content of the comment
         author: {
-          name: authorName // contains the name of the author
+          name: sourceAuthor // contains the name of the author, the person tipping
         },
         link_id: linkId, // unique id for the comment
         parent_id: parentId, // unique id of parent comment, same as linkId if there is no parent (e.g root comment)
         link_author: linkAuthor, // originating post author
         link_permalink: linkPermalink
       } = comment;
+      // console.log(comment);
       const isRootComment = linkId === parentId;
-
-      // the person tipping
-      const sourceAuthor = authorName;
 
       // get the user name of who is being tipped
       const destinationAuthor =
@@ -301,41 +331,35 @@ ${messageFooter}`
       const isNimTip = matches !== null;
       const nimAmount = isNimTip ? matches[1] : 0;
 
-      const parsedObj = {
-        isRootComment,
-        sourceAuthor,
-        destinationAuthor,
-        body,
-        isNimTip,
-        nimAmount
-      };
-
-      console.log(JSON.stringify(parsedObj, null, 2));
-
       if (isNimTip) {
         // check to comment id to see if its already paid
-        const loggedComment = await dynamo.queryTip(commentId);
+        const loggedComment = await dynamo.queryTransaction(commentId);
         const hasNotBeenLogged = loggedComment.Count === 0;
         if (hasNotBeenLogged) {
           // originating source
           // check if account balance of source is sufficient
-          const { balance: userBalance, publicAddress: userAddress, privateKey } = await dynamo.getUserPublicAddress(authorName, $);
-          const { publicAddress: destinationFriendlyAddress } = await dynamo.getUserPublicAddress(destinationAuthor, $);
-          if (userBalance >= nimAmount) {
-            // has money, can proceed with tip
-            await $.sendTransaction(privateKey, destinationFriendlyAddress, nimAmount);
-            // log that comment has been paid
-            await dynamo.putTip(commentId, {
-              sourceAuthor: authorName,
-              sourceAddress: userAddress,
-              sourceBalance: userBalance,
+          const { balance: sourceBalance, publicAddress: sourceAddress, privateKey } = await dynamo.getUserPublicAddress(sourceAuthor, $);
+          const { publicAddress: destinationAddress } = await dynamo.getUserPublicAddress(destinationAuthor, $);
+          if (sourceBalance >= nimAmount) {
+            console.log(`Recording reddit tip from ${sourceAuthor} for the amount ${nimAmount} to ${destinationAddress}`);
+            // log the tip, it will be picked up later by a separate tip polling process
+            await dynamo.putTransaction(commentId, {
+              sourceAuthor,
+              sourceAddress,
+              sourceBalance,
               destinationAuthor,
-              destinationAddress: destinationFriendlyAddress,
+              destinationAddress,
+              privateKey,
               nimAmount,
-              linkPermalink
+              linkPermalink,
+              replyMetadata: { // when the transaction later gets sent, this info is used to send the reply message back to user
+                reddit: {
+                  commentId
+                }
+              }
             });
             // console.log(result);
-            await this.replyComment(commentId, `You have successfully tipped ${destinationAuthor} ${nimAmount} NIM.`);
+            await this.replyComment(commentId, `Processing tip to ${destinationAuthor} for ${nimAmount} NIM.`);
           } else {
             // no amount? post a reply
             await this.replyComment(commentId, 'No NIM balance found for your account please use the links to make a NIM deposit first.');
