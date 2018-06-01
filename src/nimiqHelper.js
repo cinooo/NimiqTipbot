@@ -209,21 +209,7 @@ export default {
       if (fn) {
         await fn(`Failed sending the transaction, try again later. ${e.message}`);
       }
-      const updateAttributes = {
-        status: {
-          Action: 'PUT',
-          Value: dynamo.TIPS_STATUS_ERROR
-        },
-        heightCompleted: {
-          Action: 'ADD',
-          Value: $.getHeight($)
-        },
-        reason: {
-          Action: 'ADD',
-          Value: e.message
-        }
-      };
-      await dynamo.updateTransaction(tip.commentId, updateAttributes);
+      await dynamo.deleteTransaction({ commentId: tip.commentId });
     }
   },
 
