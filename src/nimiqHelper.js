@@ -198,6 +198,9 @@ export default {
         await dynamo.deleteTransaction({ commentId: tip.commentId });
         await dynamo.archiveTransaction({ ...tip, transactionHash: tx2.hash().toHex(), heightCompleted: $.getHeight($) });
         $.mempool.off('transaction-mined', id);
+      } else {
+        // if there was an issue its possible that the transaction never gets sent. E.g. insufficient funds
+        // might have to do a current block height versus heightAttempted check, but means need to do a db read
       }
     });
     $.consensus.subscribeAccounts([transaction.recipient]);
