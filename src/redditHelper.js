@@ -256,7 +256,7 @@ ${messageFooter}`;
       await this.postMessage(authorName, replySubject, replyMessage);
     }
 
-    if (subject === REDDIT.TOPICS.WITHDRAW && typeof privateKey !== 'undefined' && typeof withdrawDestination !== 'undefined' && typeof nimAmount !== 'undefined') {
+    if (subject === REDDIT.TOPICS.WITHDRAW && typeof privateKey !== 'undefined' && typeof destinationAddress !== 'undefined' && typeof nimAmount !== 'undefined') {
       // log the withdrawal, it will be picked up later by a separate tip polling process
       console.log(`Recording reddit withdrawal from ${sourceAuthor} for the amount ${nimAmount} to ${destinationAddress}`);
       await dynamo.putTransaction(message.id, {
