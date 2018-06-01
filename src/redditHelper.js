@@ -31,7 +31,7 @@ const REDDIT = {
 const messageFooter = `
 [${REDDIT.TOPICS.DEPOSIT}](https://np.reddit.com/message/compose/?to=${TIPBOT_USER_NAME}&subject=${REDDIT.TOPICS.DEPOSIT}&message=${encodeURIComponent('Deposit Nimiq!')}) | [${REDDIT.TOPICS.WITHDRAW}](https://np.reddit.com/message/compose/?to=${TIPBOT_USER_NAME}&subject=${REDDIT.TOPICS.WITHDRAW}&message=${encodeURIComponent('I want to withdraw my NIM!\namount NIM\naddress here')}) | [${REDDIT.TOPICS.BALANCE}](https://np.reddit.com/message/compose/?to=${TIPBOT_USER_NAME}&subject=${REDDIT.TOPICS.BALANCE}&message=${encodeURIComponent('I want to check my balance!')}) | [Help](https://www.reddit.com/r/NimiqTipbot/comments/8mpksa/nimiqtipbot_howto_and_faq/) |
 [${REDDIT.TOPICS.DONATE}](${getNimDepositLink(DONATE_ADDRESS)}) |
-[What is Nimiq?](https://www.nimiq.com)`;
+[What is Nimiq?](https://www.nimiq.com) | [Get Free NIM](https://nimiq-faucet.surge.sh/)`;
 
 const getTokenUrl = `https://${CLIENT_ID}:${CLIENT_SECRET}@www.reddit.com/api/v1/access_token`;
 const postData = `grant_type=authorization_code&code=${CLIENT_CODE}&redirect_uri=http://www.example.com/unused/redirect/uri`;
@@ -154,6 +154,8 @@ Your current balance is ${userBalance}
 
 You can deposit by visiting ${getNimDepositLink(userAddress)}
 
+Don't have any NIM? You can create a wallet first at http://safe.nimiq.com and then get some free NIM using this [faucet by @smitop](https://nimiq-faucet.surge.sh/)
+
 Once you have deposited NIM to this address, you will be able to tip NIM to other redditors by replying to a comment or thread with +X.XXX NIM.
 e.g. +30.2 NIM
 
@@ -223,6 +225,8 @@ ${messageFooter}`;
 Your current balance is ${userBalance}
 
 You can deposit by visiting ${getNimDepositLink(userAddress)}
+
+Don't have any NIM? You can create a wallet first at http://safe.nimiq.com and then get some free NIM using this [faucet by @smitop](https://nimiq-faucet.surge.sh/)
 
 Disclaimer: Please only deposit NIM that you are willing to lose to this address as there are no guarantees to this free service
 ${messageFooter}`;
