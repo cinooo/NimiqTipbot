@@ -272,7 +272,8 @@ ${messageFooter}`;
             authorName,
             subject: replySubject
           }
-        }
+        },
+        heightRecorded: $.getHeight($)
       });
     }
   },
@@ -357,7 +358,8 @@ ${messageFooter}`;
                 reddit: {
                   commentId: newComment.id
                 }
-              }
+              },
+              heightRecorded: $.getHeight($)
             });
           } else {
             // no amount? post a reply

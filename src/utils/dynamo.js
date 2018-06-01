@@ -104,18 +104,16 @@ export const archiveTransaction = async (loggedDetails, time = new Date().getTim
   return dynamo.put(params).promise();
 };
 
-export const updateTransaction = async (commentId, status = TIPS_STATUS_PENDING) => {
+export const updateTransaction = async (commentId, attributesToUpdate) => {
   try {
+    console.log(attributesToUpdate);
     const params = {
       TableName: `${DYNAMO_TABLE_TIPBOT_TRANSACTIONS}`,
       Key: {
         commentId
       },
       AttributeUpdates: {
-        status: {
-          Action: 'PUT',
-          Value: status
-        }
+        ...attributesToUpdate
       }
     };
     await dynamo.update(params).promise().catch((e) => {

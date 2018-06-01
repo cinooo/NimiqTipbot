@@ -38,6 +38,7 @@ export default {
     $.isEstablished = this.isEstablished.bind(this);
     $.getBalance = this._getBalance.bind(this);
     $.sendTransaction = this._sendTransaction.bind(this);
+    $.getHeight = this._getHeight.bind(this);
 
     return $;
   },
@@ -46,6 +47,10 @@ export default {
     console.log('Consensus established.');
     $.established = true;
     console.log('height:', $.blockchain.height);
+  },
+
+  _getHeight($) {
+    return $.blockchain.height;
   },
 
   isEstablished() {
@@ -128,6 +133,16 @@ export default {
   // Reddit tip in comments
   async _sendTransaction(privateKey, destinationFriendlyAddress, coins, tip, fn) {
     if (!this.isEstablished()) {
+      const updateAttributes = {
+        status: {
+          Action: 'PUT',
+          Value: dynamo.TIPS_STATUS_NEW
+        },
+        heightAttempted: {
+          Action: 'DELETE'
+        }
+      };
+      await dynamo.updateTransaction(tip.commentId, updateAttributes);
       return console.log(`Can't send transactions when consensus not established`);
     }
 
@@ -151,7 +166,16 @@ export default {
     if (isMempoolAvailable($) === false || canSendFreeTransaction($, senderAddress) === false) {
       console.log(`Mempool transactions full or no free transactions left`);
       // free up for next round of polling
-      await dynamo.updateTransaction(tip.commentId, dynamo.TIPS_STATUS_NEW);
+      const updateAttributes = {
+        status: {
+          Action: 'PUT',
+          Value: dynamo.TIPS_STATUS_NEW
+        },
+        heightAttempted: {
+          Action: 'DELETE'
+        }
+      };
+      await dynamo.updateTransaction(tip.commentId, updateAttributes);
       return;
     }
 
@@ -165,14 +189,14 @@ export default {
     // console.log('sendTransaction result', result);
     const id = $.mempool.on('transaction-mined', async tx2 => {
       if (transaction.equals(tx2)) {
-        console.log('Transaction mined', tx2.hash().toHex());
+        console.log(`Block height ${$.blockchain.height}`, 'transaction mined', tx2.hash().toHex());
         if (fn) {
           await fn(`NIM successfully transacted, hash: ${tx2.hash().toHex()}`);
         }
         // console.log('deleteTransaction', tip, tip.commentId);
         // remove the record from dynamo
         await dynamo.deleteTransaction({ commentId: tip.commentId });
-        await dynamo.archiveTransaction({ ...tip, transactionHash: tx2.hash().toHex() });
+        await dynamo.archiveTransaction({ ...tip, transactionHash: tx2.hash().toHex(), heightCompleted: $.getHeight($) });
         $.mempool.off('transaction-mined', id);
       }
     });
@@ -185,7 +209,21 @@ export default {
       if (fn) {
         await fn(`Failed sending the transaction, try again later. ${e.message}`);
       }
-      await dynamo.updateTransaction(tip.commentId, dynamo.TIPS_STATUS_ERROR);
+      const updateAttributes = {
+        status: {
+          Action: 'PUT',
+          Value: dynamo.TIPS_STATUS_ERROR
+        },
+        heightCompleted: {
+          Action: 'ADD',
+          Value: $.getHeight($)
+        },
+        reason: {
+          Action: 'ADD',
+          Value: e.message
+        }
+      };
+      await dynamo.updateTransaction(tip.commentId, updateAttributes);
     }
   },
 
@@ -221,7 +259,17 @@ export default {
       console.log(commentId);
 
       // set it to pending to prevent it being picked up by future poll processes
-      await dynamo.updateTransaction(commentId, dynamo.TIPS_STATUS_PENDING);
+      const updateAttributes = {
+        status: {
+          Action: 'PUT',
+          Value: dynamo.TIPS_STATUS_PENDING
+        },
+        heightAttempted: {
+          Action: 'ADD',
+          Value: $.getHeight($)
+        }
+      };
+      await dynamo.updateTransaction(commentId, updateAttributes);
 
       // start the transaction send process
       const { balance: userBalance, publicAddress: userAddress, privateKey } = await dynamo.getUserPublicAddress(sourceAuthor, $);

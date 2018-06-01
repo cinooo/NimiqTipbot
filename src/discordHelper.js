@@ -205,7 +205,8 @@ export default {
                 channelId,
                 ...newReplyMessage && { messageId: newReplyMessage.id }
               }
-            }
+            },
+            heightRecorded: $.getHeight($)
           });
         }
       }
