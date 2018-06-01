@@ -154,10 +154,10 @@ Your current balance is ${userBalance}
 
 You can deposit by visiting ${getNimDepositLink(userAddress)}
 
-Don't have any NIM? You can create a wallet first at http://safe.nimiq.com and then get some free NIM using this [faucet by @smitop](https://nimiq-faucet.surge.sh/)
-
 Once you have deposited NIM to this address, you will be able to tip NIM to other redditors by replying to a comment or thread with +X.XXX NIM.
 e.g. +30.2 NIM
+
+Don't have any NIM? You can get some free NIM using this [faucet by @smitop](https://nimiq-faucet.surge.sh/)!
 
 Disclaimer: Please only deposit NIM that you are willing to lose to this address as there are no guarantees to this free service
 ${messageFooter}`;
@@ -226,7 +226,7 @@ Your current balance is ${userBalance}
 
 You can deposit by visiting ${getNimDepositLink(userAddress)}
 
-Don't have any NIM? You can create a wallet first at http://safe.nimiq.com and then get some free NIM using this [faucet by @smitop](https://nimiq-faucet.surge.sh/)
+Don't have any NIM? You can get some free NIM using this [faucet by @smitop](https://nimiq-faucet.surge.sh/)!
 
 Disclaimer: Please only deposit NIM that you are willing to lose to this address as there are no guarantees to this free service
 ${messageFooter}`;
