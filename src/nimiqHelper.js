@@ -169,7 +169,7 @@ export default {
         if (fn) {
           await fn(`NIM successfully transacted, hash: ${tx2.hash().toHex()}`);
         }
-        console.log('deleteTransaction', tip, tip.commentId);
+        // console.log('deleteTransaction', tip, tip.commentId);
         // remove the record from dynamo
         await dynamo.deleteTransaction({ commentId: tip.commentId });
         await dynamo.archiveTransaction({ ...tip, transactionHash: tx2.hash().toHex() });

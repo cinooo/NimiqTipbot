@@ -159,7 +159,7 @@ e.g. +30.2 NIM
 
 Disclaimer: Please only deposit NIM that you are willing to lose to this address as there are no guarantees to this free service
 ${messageFooter}`;
-    console.log(replyMessage);
+    // console.log(replyMessage);
     return {
       replyMessage,
       replySubject: 'Re: Deposit'
@@ -246,7 +246,7 @@ ${messageFooter}`;
   // when a message comes into NimiqTipbot inbox it should be handled depending on the topic
   async handleInboxMessage(message, $) {
     const { subject, authorName, body } = message;
-    console.log('handleInboxMessage', message);
+    // console.log('handleInboxMessage', message);
     const { replyMessage, replySubject, sourceAuthor, sourceAddress, destinationAuthor, destinationAddress, sourceBalance, nimAmount, privateKey } =
       subject === REDDIT.TOPICS.DEPOSIT ? await this.getReplyMessageForDeposit(authorName, $)
         : subject === REDDIT.TOPICS.WITHDRAW ? await this.getReplyMessageForWithdraw(authorName, body, $)
