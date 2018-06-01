@@ -230,7 +230,7 @@ Don't have any NIM? You can create a wallet first at http://safe.nimiq.com and t
 
 Disclaimer: Please only deposit NIM that you are willing to lose to this address as there are no guarantees to this free service
 ${messageFooter}`;
-    console.log(replyMessage);
+    // console.log(replyMessage);
     return {
       replyMessage,
       replySubject: 'Re: Balance'
