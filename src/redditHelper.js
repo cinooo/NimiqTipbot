@@ -97,7 +97,7 @@ export default {
 
   async getCommentAuthorFromCommentName(commentName) {
     const response = await this.R().getComment(commentName).author.name;
-    console.log(response);
+    // console.log(response);
     return response;
   },
 
@@ -346,7 +346,7 @@ ${messageFooter}`;
           const { balance: sourceBalance, publicAddress: sourceAddress, privateKey } = await dynamo.getUserPublicAddress(sourceAuthor, $);
           const { publicAddress: destinationAddress } = await dynamo.getUserPublicAddress(destinationAuthor, $);
           if (sourceBalance >= nimAmount) {
-            console.log(`Recording reddit tip from ${sourceAuthor} for the amount ${nimAmount} to ${destinationAddress}`);
+            console.log(`Recording reddit tip from ${sourceAuthor} for the amount ${nimAmount} to ${destinationAddress}`, linkPermalink);
             const newComment = await this.replyComment(commentId, `Processing tip to ${destinationAuthor} for ${nimAmount} NIM.`);
             // log the tip, it will be picked up later by a separate tip polling process
             await dynamo.putTransaction(commentId, {
@@ -366,6 +366,7 @@ ${messageFooter}`;
               heightRecorded: $.getHeight($)
             });
           } else {
+            console.log(sourceAuthor, 'No NIM balance found for your account please use the links to make a NIM deposit first.', linkPermalink);
             // no amount? post a reply
             await this.replyComment(commentId, 'No NIM balance found for your account please use the links to make a NIM deposit first.');
           }
