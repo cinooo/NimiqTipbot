@@ -332,7 +332,7 @@ ${messageFooter}`;
       const nimAmount = isNimTip ? matches[1] : 0;
 
       if (isNimTip) {
-        // check to comment id to see if its already paid
+        // check to comment id to see if its already logged
         const loggedComment = await dynamo.queryTransaction(commentId);
         const hasNotBeenLogged = loggedComment.Count === 0;
         if (hasNotBeenLogged) {
@@ -342,6 +342,7 @@ ${messageFooter}`;
           const { publicAddress: destinationAddress } = await dynamo.getUserPublicAddress(destinationAuthor, $);
           if (sourceBalance >= nimAmount) {
             console.log(`Recording reddit tip from ${sourceAuthor} for the amount ${nimAmount} to ${destinationAddress}`);
+            const newComment = await this.replyComment(commentId, `Processing tip to ${destinationAuthor} for ${nimAmount} NIM.`);
             // log the tip, it will be picked up later by a separate tip polling process
             await dynamo.putTransaction(commentId, {
               sourceAuthor,
@@ -354,12 +355,10 @@ ${messageFooter}`;
               linkPermalink,
               replyMetadata: { // when the transaction later gets sent, this info is used to send the reply message back to user
                 reddit: {
-                  commentId
+                  commentId: newComment.id
                 }
               }
             });
-            // console.log(result);
-            await this.replyComment(commentId, `Processing tip to ${destinationAuthor} for ${nimAmount} NIM.`);
           } else {
             // no amount? post a reply
             await this.replyComment(commentId, 'No NIM balance found for your account please use the links to make a NIM deposit first.');

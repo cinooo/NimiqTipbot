@@ -182,6 +182,9 @@ export default {
       console.log('relayTransaction, waiting to confirm', transaction.hash().toHex());
     } catch (e) {
       console.error('Error encountered with relayTransaction', e);
+      if (fn) {
+        await fn(`Failed sending the transaction, try again later. ${e.message}`);
+      }
       await dynamo.updateTransaction(tip.commentId, dynamo.TIPS_STATUS_ERROR);
     }
   },
@@ -240,7 +243,7 @@ export default {
 
   startPollTransactions(nimiqClient) {
     setInterval(async () => {
-      console.log('pollTransaction');
+      // console.log('pollTransaction');
       $ = nimiqClient;
       await this.pollTransactions(nimiqClient);
     }, TRANSACTIONS_POLL_TIME);
