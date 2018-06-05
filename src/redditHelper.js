@@ -121,23 +121,23 @@ export default {
         await this.markMessageAsRead(message.id);
       }
 
-      const summonedMessages = await this.getPrivateMessageComments();
-      for (let i = 0; i < summonedMessages.length; i++) {
-        const message = summonedMessages[i];
-
-        const comment = await this.R().get_comment(message.id);
-        const commentId = await comment.id;
-        const body = await comment.body;
-        const sourceAuthor = await comment.author.name;
-        const linkId = await comment.link_id;
-        const parentId = await comment.parent_id;
-        const linkAuthor = await comment.link_author;
-        const linkPermalink = await comment.link_permalink;
-
-        console.log(commentId, body, sourceAuthor, linkId, parentId, linkAuthor, linkPermalink);
-        // await this.processCommentTip($, commentId, body, sourceAuthor, linkId, parentId, linkAuthor, linkPermalink);
-
-        await this.markMessageAsRead(message.id);
+      // const summonedMessages = await this.getPrivateMessageComments();
+      // for (let i = 0; i < summonedMessages.length; i++) {
+      //   const message = summonedMessages[i];
+      //
+      //   const comment = await this.R().get_comment(message.id);
+      //   const commentId = await comment.id;
+      //   const body = await comment.body;
+      //   const sourceAuthor = await comment.author.name;
+      //   const linkId = await comment.link_id;
+      //   const parentId = await comment.parent_id;
+      //   const linkAuthor = await comment.link_author;
+      //   const linkPermalink = await comment.link_permalink;
+      //
+      //   console.log(commentId, body, sourceAuthor, linkId, parentId, linkAuthor, linkPermalink);
+      //   // await this.processCommentTip($, commentId, body, sourceAuthor, linkId, parentId, linkAuthor, linkPermalink);
+      //
+      //   await this.markMessageAsRead(message.id);
       }
     }, MESSAGES_POLL_TIME);
   },
