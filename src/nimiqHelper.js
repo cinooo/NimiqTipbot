@@ -1,7 +1,7 @@
 import Nimiq from '@nimiq/core';
 
 import reddit from './redditHelper';
-import discord from './discordHelper';
+import { default as discord, logMessageToHistoryChannel } from './discordHelper';
 import MnemonicPhrase from './phrase.js';
 import * as dynamo from './utils/dynamo';
 let $ = {};
@@ -192,12 +192,14 @@ export default {
         console.log(`Block height ${$.blockchain.height}`, 'transaction mined', tx2.hash().toHex());
         if (fn) {
           await fn(`NIM successfully sent!`, tx2.hash().toHex());
+
         }
         // console.log('deleteTransaction', tip, tip.commentId);
         // remove the record from dynamo
         await dynamo.deleteTransaction({ commentId: tip.commentId });
         await dynamo.archiveTransaction({ ...tip, transactionHash: tx2.hash().toHex(), heightCompleted: $.getHeight($) });
         $.mempool.off('transaction-mined', id);
+        await logMessageToHistoryChannel(`Block height ${$.blockchain.height}`, 'transaction mined', tx2.hash().toHex());
       } else {
         // if there was an issue its possible that the transaction never gets sent. E.g. insufficient funds
         // might have to do a current block height versus heightAttempted check, but means need to do a db read
@@ -206,6 +208,7 @@ export default {
     $.consensus.subscribeAccounts([transaction.recipient]);
     try {
       await $.consensus.relayTransaction(transaction);
+      await logMessageToHistoryChannel('relayTransaction, waiting to confirm', transaction.hash().toHex());
       console.log('relayTransaction, waiting to confirm', transaction.hash().toHex());
     } catch (e) {
       console.error('Error encountered with relayTransaction', e);
@@ -213,6 +216,7 @@ export default {
         await fn(`Failed sending the transaction, try again later. ${e.message}`);
       }
       await dynamo.deleteTransaction({ commentId: tip.commentId });
+      await logMessageToHistoryChannel(`Failed sending the transaction, try again later. ${e.message}`);
     }
   },
 
@@ -223,7 +227,7 @@ export default {
       transactionHash && redditMetadata
         ? `${replyMessage} [View the transaction](${viewTransactionUrl})`
         : transactionHash && discordMetadata
-          ? `${replyMessage} View the transaction: (${viewTransactionUrl})`
+          ? `${replyMessage} View the transaction: <${viewTransactionUrl}>`
           : replyMessage;
     // this is posting a personal message to a reddit user's inbox for withdrawals
     if (redditMetadata && redditMetadata.authorName && redditMetadata.subject) {

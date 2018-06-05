@@ -127,10 +127,6 @@ export default {
 
   async getPrivateMessages() {
     const responses = await this.R().get_unread_messages({mark: false, limit: 2});
-    // for (let i = 0; i < responses.length; i++) {
-    //   console.log(responses[i])
-    //   await this.markMessageAsRead(responses[i].id);
-    // }
 
     // don't include auto inbox comment & post replies
     const actualMessages = responses.filter(response => response.was_comment === false);
@@ -149,7 +145,7 @@ export default {
 
   async getReplyMessageForDeposit(authorName, $) {
     const { balance: userBalance, publicAddress: userAddress } = await dynamo.getUserPublicAddress(authorName, $);
-
+    await logMessageToHistoryChannel(`Check !deposit from reddit: ${authorName}`);
     const replyMessage = `Your NIM address is: ${userAddress}
 
 Your current balance is ${userBalance}
@@ -207,6 +203,8 @@ ${messageFooter}`;
       };
     }
 
+    await logMessageToHistoryChannel(`Withdrawal from reddit: ${authorName}`);
+
     // otherwise message saying process the withdraw request!
     return {
       replyMessage: `Processing your withdrawal of ${withdrawAmount} NIM to ${destinationAddress}`,
@@ -223,7 +221,7 @@ ${messageFooter}`;
 
   async getReplyMessageForBalance(authorName, $) {
     const { balance: userBalance, publicAddress: userAddress } = await dynamo.getUserPublicAddress(authorName, $);
-    logMessageToHistoryChannel(`Check !balance from reddit: ${authorName}`);
+    await logMessageToHistoryChannel(`Check !balance from reddit: ${authorName}`);
     const replyMessage = `Your NIM address is: ${userAddress}
 
 Your current balance is ${userBalance}
