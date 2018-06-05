@@ -138,7 +138,7 @@ export default {
       //   // await this.processCommentTip($, commentId, body, sourceAuthor, linkId, parentId, linkAuthor, linkPermalink);
       //
       //   await this.markMessageAsRead(message.id);
-      }
+      // }
     }, MESSAGES_POLL_TIME);
   },
 
