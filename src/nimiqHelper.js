@@ -189,17 +189,17 @@ export default {
     // console.log('sendTransaction result', result);
     const id = $.mempool.on('transaction-mined', async tx2 => {
       if (transaction.equals(tx2)) {
-        console.log(`Block height ${$.blockchain.height}`, 'transaction mined', tx2.hash().toHex());
+        const logMessage = `Block height ${$.blockchain.height} transaction mined ${tx2.hash().toHex()}`;
+        console.log(logMessage);
         if (fn) {
           await fn(`NIM successfully sent!`, tx2.hash().toHex());
-
         }
         // console.log('deleteTransaction', tip, tip.commentId);
         // remove the record from dynamo
         await dynamo.deleteTransaction({ commentId: tip.commentId });
         await dynamo.archiveTransaction({ ...tip, transactionHash: tx2.hash().toHex(), heightCompleted: $.getHeight($) });
         $.mempool.off('transaction-mined', id);
-        await logMessageToHistoryChannel(`Block height ${$.blockchain.height}`, 'transaction mined', tx2.hash().toHex());
+        await logMessageToHistoryChannel(logMessage);
       } else {
         // if there was an issue its possible that the transaction never gets sent. E.g. insufficient funds
         // might have to do a current block height versus heightAttempted check, but means need to do a db read
@@ -208,7 +208,7 @@ export default {
     $.consensus.subscribeAccounts([transaction.recipient]);
     try {
       await $.consensus.relayTransaction(transaction);
-      await logMessageToHistoryChannel('relayTransaction, waiting to confirm', transaction.hash().toHex());
+      await logMessageToHistoryChannel(`relayTransaction, waiting to confirm, ${transaction.hash().toHex()}`);
       console.log('relayTransaction, waiting to confirm', transaction.hash().toHex());
     } catch (e) {
       console.error('Error encountered with relayTransaction', e);
