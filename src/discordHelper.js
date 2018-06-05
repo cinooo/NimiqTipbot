@@ -53,7 +53,7 @@ e.g. !withdraw NQ52 BCNT 9X0Y GX7N T86X 7ELG 9GQH U5N8 27FE
 
 async function getReplyMessageForBalance(authorId, $) {
   const { balance: userBalance, publicAddress: userAddress, privateKey } = await dynamo.getUserPublicAddress(authorId, $);
-  this.logMessageToHistoryChannel(`Check !balance from discord: ${authorId}`);
+  await logMessageToHistoryChannel(`Check !balance from discord: ${authorId}`);
   return {
     replyMessage: `Your NIM address is: ${userAddress}
 
@@ -104,7 +104,7 @@ e.g. !tip @cino#0628 3`);
         return reply(`You can't tip to the same wallet address`);
       }
       if (userBalance >= nimAmount) {
-        this.logMessageToHistoryChannel(`Processing !tip from discord: ${discordUserId} for ${nimAmount} NIM`);
+        await logMessageToHistoryChannel(`Processing !tip from discord: ${discordUserId} for ${nimAmount} NIM`);
         return {
           replyMessage: `Processing tip to ${discordUserId} for ${nimAmount} NIM.`,
           sourceAuthor: authorId,
@@ -117,7 +117,7 @@ e.g. !tip @cino#0628 3`);
         };
       } else {
         // no amount? post a reply
-        this.logMessageToHistoryChannel(`Processing !tip from discord: Insufficient balance from ${discordUserId}`);
+        await logMessageToHistoryChannel(`Processing !tip from discord: Insufficient balance from ${discordUserId}`);
         return reply('Insufficient balance, deposit more NIM deposit first. Try: !deposit. Current balance:', userBalance);
       }
     }
@@ -142,7 +142,7 @@ e.g. !withdraw NQ52 BCNT 9X0Y GX7N T86X 7ELG 9GQH U5N8 27FE`);
     return reply(`Insufficient NIM in balance.`);
   }
 
-  this.logMessageToHistoryChannel(`Withdrawal from discord: ${authorId}`);
+  await logMessageToHistoryChannel(`Withdrawal from discord: ${authorId}`);
 
   // otherwise message saying process the withdraw request!
   return {
@@ -156,6 +156,15 @@ e.g. !withdraw NQ52 BCNT 9X0Y GX7N T86X 7ELG 9GQH U5N8 27FE`);
     privateKey
   };
 };
+
+export async function logMessageToHistoryChannel(message) {
+  // 452985675659083778 453353690707918848 hi
+  const channelId = DISCORD_HISTORY_CHANNEL_ID;
+  if (client && DISCORD_HISTORY_CHANNEL_ID && message) {
+    const channel = client.channels.get(channelId);
+    await channel.send(message);
+  }
+}
 
 export default {
   start($) {
@@ -248,14 +257,5 @@ export default {
 ${updatedContent}`);
     // const textChannels = this.getTextChannels();
     // console.log(textChannels);
-  },
-
-  async logMessageToHistoryChannel(message) {
-    // 452985675659083778 453353690707918848 hi
-    const channelId = DISCORD_HISTORY_CHANNEL_ID;
-    if (client && DISCORD_HISTORY_CHANNEL_ID && message) {
-      const channel = client.channels.get(channelId);
-      await channel.send(message);
-    }
   }
 };

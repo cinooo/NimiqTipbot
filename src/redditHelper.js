@@ -4,7 +4,7 @@ import Snoowrap from 'snoowrap';
 import Snoostorm from 'snoostorm';
 
 import nimiqHelper from './nimiqHelper.js';
-import discordHelper from './discordHelper.js';
+import { logMessageToHistoryChannel } from './discordHelper.js';
 import * as dynamo from './utils/dynamo.js';
 
 const {
@@ -223,7 +223,7 @@ ${messageFooter}`;
 
   async getReplyMessageForBalance(authorName, $) {
     const { balance: userBalance, publicAddress: userAddress } = await dynamo.getUserPublicAddress(authorName, $);
-    discordHelper.logMessageToHistoryChannel(`Check !balance from reddit: ${authorName}`);
+    logMessageToHistoryChannel(`Check !balance from reddit: ${authorName}`);
     const replyMessage = `Your NIM address is: ${userAddress}
 
 Your current balance is ${userBalance}
