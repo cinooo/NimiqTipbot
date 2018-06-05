@@ -18,14 +18,14 @@ const startNimiq = async () => {
       await checkNimSynced();
     } else {
       console.log('Nimiq is synced');
+      // start the discord bot
+      discord.start($);
+
       // initialise the inbox poll
       reddit.readMessages($);
 
       // poll comments!
       reddit.readComments($);
-
-      // start the discord bot
-      discord.start($);
 
       // start the poll on transactions
       nimiqHelper.startPollTransactions($);

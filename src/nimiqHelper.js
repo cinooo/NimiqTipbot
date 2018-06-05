@@ -191,7 +191,7 @@ export default {
       if (transaction.equals(tx2)) {
         console.log(`Block height ${$.blockchain.height}`, 'transaction mined', tx2.hash().toHex());
         if (fn) {
-          await fn(`NIM successfully transacted, hash: ${tx2.hash().toHex()}`);
+          await fn(`NIM successfully sent!`, tx2.hash().toHex());
         }
         // console.log('deleteTransaction', tip, tip.commentId);
         // remove the record from dynamo
@@ -216,23 +216,30 @@ export default {
     }
   },
 
-  async replyChannel(replyMetadata, replyMessage) {
+  async replyChannel(replyMetadata, replyMessage, transactionHash) {
     const { reddit: redditMetadata, discord: discordMetadata } = replyMetadata;
+    const viewTransactionUrl = `https://nimiq.mopsus.com/tx/0x${transactionHash}`;
+    const message =
+      transactionHash && redditMetadata
+        ? `${replyMessage} [View the transaction](${viewTransactionUrl})`
+        : transactionHash && discordMetadata
+          ? `${replyMessage} View the transaction: (${viewTransactionUrl})`
+          : replyMessage;
     // this is posting a personal message to a reddit user's inbox for withdrawals
     if (redditMetadata && redditMetadata.authorName && redditMetadata.subject) {
       const { authorName, subject } = redditMetadata;
-      await reddit.postMessage(authorName, subject, replyMessage);
+      await reddit.postMessage(authorName, subject, message);
     }
 
     // this is editing a comment for normal tipping
     if (redditMetadata && redditMetadata.commentId) {
-      await reddit.editComment(redditMetadata.commentId, replyMessage);
+      await reddit.editComment(redditMetadata.commentId, message);
     }
 
     // transaction or withdrawal update for discord, updates the initial bot message reply
     if (discordMetadata && discordMetadata.channelId && discordMetadata.messageId) {
       const { channelId, messageId } = discordMetadata;
-      await discord.editMessage(channelId, messageId, replyMessage);
+      await discord.editMessage(channelId, messageId, message);
     }
   },
 
@@ -269,8 +276,8 @@ export default {
       }
 
       const replyFn = ((replyMetadata) => {
-        return (replyMessage) => {
-          this.replyChannel(replyMetadata, replyMessage);
+        return (replyMessage, transactionHash) => {
+          this.replyChannel(replyMetadata, replyMessage, transactionHash);
         };
       })(replyMetadata);
 
