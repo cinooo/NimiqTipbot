@@ -114,19 +114,43 @@ export default {
   readMessages($) {
     messagesPollId = setInterval(async () => {
       const messages = await this.getPrivateMessages();
-      if (messages.length > 0) {
-        for (let i = 0; i < messages.length; i++) {
-          const message = messages[i];
-          await this.handleInboxMessage(message, $);
-          // console.log('result', result);
-          await this.markMessageAsRead(message.id);
-        }
-      };
+      for (let i = 0; i < messages.length; i++) {
+        const message = messages[i];
+        await this.handleInboxMessage(message, $);
+        // console.log('result', result);
+        await this.markMessageAsRead(message.id);
+      }
+
+      const summonedMessages = await this.getPrivateMessageComments();
+      for (let i = 0; i < summonedMessages.length; i++) {
+        const message = summonedMessages[i];
+
+        const comment = await this.R().get_comment(message.id);
+        const commentId = await comment.id;
+        const body = await comment.body;
+        const sourceAuthor = await comment.author.name;
+        const linkId = await comment.link_id;
+        const parentId = await comment.parent_id;
+        const linkAuthor = await comment.link_author;
+        const linkPermalink = await comment.link_permalink;
+
+        await this.processCommentTip($, commentId, body, sourceAuthor, linkId, parentId, linkAuthor, linkPermalink);
+
+        await this.markMessageAsRead(message.id);
+      }
     }, MESSAGES_POLL_TIME);
   },
 
+  async getPrivateMessageComments() {
+    const responses = await this.R().get_unread_messages({mark: false, limit: 5});
+    // console.log('responses', responses);
+    // const usernameMentions = responses.filter(response => response.subject ===)
+    const summonedMessages = responses.filter(response => response.was_comment === true && response.subject === 'username mention');
+    return summonedMessages;
+  },
+
   async getPrivateMessages() {
-    const responses = await this.R().get_unread_messages({mark: false, limit: 2});
+    const responses = await this.R().get_unread_messages({mark: false, limit: 5});
 
     // don't include auto inbox comment & post replies
     const actualMessages = responses.filter(response => response.was_comment === false);
@@ -308,6 +332,61 @@ ${messageFooter}`;
     // expect(await comment.refresh().body).to.equal(new_text);
   },
 
+  async processCommentTip($, commentId, body, sourceAuthor, linkId, parentId, linkAuthor, linkPermalink) {
+    const isRootComment = linkId === parentId;
+
+    // get the user name of who is being tipped
+    const destinationAuthor =
+      isRootComment
+        ? linkAuthor // if it's a root comment, get the OP link author
+        : await this.getCommentAuthorFromCommentName(parentId); // if it is a reply to a comment, get the parent id
+    // const isNimTipReg = /\+([0-9]+\.?[0-9]{0,6}) NIM[ ]?/mg;
+    const isNimTipReg = /\+(\d?(\.\d{1,6})?) NIM[ ]?/mg;
+    const matches = isNimTipReg.exec(body);
+    const isNimTip = matches !== null;
+    const nimAmount = isNimTip ? matches[1] : 0;
+
+    if (isNimTip) {
+      // check to comment id to see if its already logged
+      const loggedComment = await dynamo.queryTransaction(commentId);
+      const hasNotBeenLogged = loggedComment.Count === 0;
+      if (hasNotBeenLogged) {
+        // originating source
+        // check if account balance of source is sufficient
+        const { balance: sourceBalance, publicAddress: sourceAddress, privateKey } = await dynamo.getUserPublicAddress(sourceAuthor, $);
+        const { publicAddress: destinationAddress } = await dynamo.getUserPublicAddress(destinationAuthor, $);
+        if (sourceBalance >= nimAmount) {
+          console.log(`Recording reddit tip from ${sourceAuthor} for the amount ${nimAmount} to ${destinationAddress}`, linkPermalink);
+          const newComment = await this.replyComment(commentId, `Processing tip to ${destinationAuthor} for ${nimAmount} NIM.`);
+
+          // log the tip, it will be picked up later by a separate tip polling process
+          await dynamo.putTransaction(commentId, {
+            sourceAuthor,
+            sourceAddress,
+            sourceBalance,
+            destinationAuthor,
+            destinationAddress,
+            privateKey,
+            nimAmount,
+            linkPermalink,
+            replyMetadata: { // when the transaction later gets sent, this info is used to send the reply message back to user
+              reddit: {
+                commentId: newComment.id
+              }
+            },
+            heightRecorded: $.getHeight($)
+          });
+          await logMessageToHistoryChannel(`Processing !tip from reddit: ${sourceAuthor} to ${destinationAuthor} for ${nimAmount} NIM`);
+        } else {
+          console.log(sourceAuthor, 'No NIM balance found for your account please use the links to make a NIM deposit first.', linkPermalink);
+          // no amount? post a reply
+          await this.replyComment(commentId, 'No NIM balance found for your account please use the links to make a NIM deposit first.');
+          await logMessageToHistoryChannel(`Processing !tip from reddit: Insufficient balance from ${sourceAuthor}`);
+        }
+      }
+    }
+  },
+
   readComments($) {
     const comments = this.Client().CommentStream(streamOpts);
 
@@ -326,58 +405,7 @@ ${messageFooter}`;
         link_permalink: linkPermalink
       } = comment;
       // console.log(comment);
-      const isRootComment = linkId === parentId;
-
-      // get the user name of who is being tipped
-      const destinationAuthor =
-        isRootComment
-          ? linkAuthor // if it's a root comment, get the OP link author
-          : await this.getCommentAuthorFromCommentName(parentId); // if it is a reply to a comment, get the parent id
-      // const isNimTipReg = /\+([0-9]+\.?[0-9]{0,6}) NIM[ ]?/mg;
-      const isNimTipReg = /\+(\d?(\.\d{1,6})?) NIM[ ]?/mg;
-      const matches = isNimTipReg.exec(body);
-      const isNimTip = matches !== null;
-      const nimAmount = isNimTip ? matches[1] : 0;
-
-      if (isNimTip) {
-        // check to comment id to see if its already logged
-        const loggedComment = await dynamo.queryTransaction(commentId);
-        const hasNotBeenLogged = loggedComment.Count === 0;
-        if (hasNotBeenLogged) {
-          // originating source
-          // check if account balance of source is sufficient
-          const { balance: sourceBalance, publicAddress: sourceAddress, privateKey } = await dynamo.getUserPublicAddress(sourceAuthor, $);
-          const { publicAddress: destinationAddress } = await dynamo.getUserPublicAddress(destinationAuthor, $);
-          if (sourceBalance >= nimAmount) {
-            console.log(`Recording reddit tip from ${sourceAuthor} for the amount ${nimAmount} to ${destinationAddress}`, linkPermalink);
-            const newComment = await this.replyComment(commentId, `Processing tip to ${destinationAuthor} for ${nimAmount} NIM.`);
-
-            // log the tip, it will be picked up later by a separate tip polling process
-            await dynamo.putTransaction(commentId, {
-              sourceAuthor,
-              sourceAddress,
-              sourceBalance,
-              destinationAuthor,
-              destinationAddress,
-              privateKey,
-              nimAmount,
-              linkPermalink,
-              replyMetadata: { // when the transaction later gets sent, this info is used to send the reply message back to user
-                reddit: {
-                  commentId: newComment.id
-                }
-              },
-              heightRecorded: $.getHeight($)
-            });
-            await logMessageToHistoryChannel(`Processing !tip from reddit: ${sourceAuthor} to ${destinationAuthor} for ${nimAmount} NIM`);
-          } else {
-            console.log(sourceAuthor, 'No NIM balance found for your account please use the links to make a NIM deposit first.', linkPermalink);
-            // no amount? post a reply
-            await this.replyComment(commentId, 'No NIM balance found for your account please use the links to make a NIM deposit first.');
-            await logMessageToHistoryChannel(`Processing !tip from reddit: Insufficient balance from ${sourceAuthor}`);
-          }
-        }
-      }
+      await this.processCommentTip($, commentId, body, sourceAuthor, linkId, parentId, linkAuthor, linkPermalink);
     });
   }
 };
