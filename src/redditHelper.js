@@ -134,7 +134,8 @@ export default {
         const linkAuthor = await comment.link_author;
         const linkPermalink = await comment.link_permalink;
 
-        await this.processCommentTip($, commentId, body, sourceAuthor, linkId, parentId, linkAuthor, linkPermalink);
+        console.log(commentId, body, sourceAuthor, linkId, parentId, linkAuthor, linkPermalink);
+        // await this.processCommentTip($, commentId, body, sourceAuthor, linkId, parentId, linkAuthor, linkPermalink);
 
         await this.markMessageAsRead(message.id);
       }
