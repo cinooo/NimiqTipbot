@@ -79,7 +79,7 @@ let messagesPollId; // setInterval id that polls messages
 const streamOpts = {
   subreddit: REDDIT_SUBSCRIBED_SUBREDDIT,
   results: REDDIT_COMMENTS_STREAM_FETCH_RESULTS,
-  pollTime: REDDIT_COMMENTS_POLLTIME
+  pollTime: parseInt(REDDIT_COMMENTS_POLLTIME)
 };
 
 export default {
