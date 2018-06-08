@@ -344,7 +344,7 @@ ${messageFooter}`;
         ? linkAuthor // if it's a root comment, get the OP link author
         : await this.getCommentAuthorFromCommentName(parentId); // if it is a reply to a comment, get the parent id
     // const isNimTipReg = /\+([0-9]+\.?[0-9]{0,6}) NIM[ ]?/mg;
-    const isNimTipReg = /\+(\d?(\.\d{1,6})?) NIM[ ]?/mg;
+    const isNimTipReg = /\+(\d*(\.\d{1,6})?) NIM[ ]?/mg;
     const matches = isNimTipReg.exec(body);
     const isNimTip = matches !== null;
     const nimAmount = isNimTip ? matches[1] : 0;
