@@ -17,7 +17,9 @@ const {
   MESSAGES_POLL_TIME,
   NIMIQ_NETWORK,
   REDDIT_REFRESH_TOKEN,
-  REDDIT_SUBSCRIBED_SUBREDDIT
+  REDDIT_SUBSCRIBED_SUBREDDIT,
+  REDDIT_COMMENTS_STREAM_FETCH_RESULTS,
+  REDDIT_COMMENTS_POLLTIME
 } = process.env;
 
 const REDDIT = {
@@ -76,8 +78,8 @@ let client;
 let messagesPollId; // setInterval id that polls messages
 const streamOpts = {
   subreddit: REDDIT_SUBSCRIBED_SUBREDDIT,
-  results: 5,
-  pollTime: 5000
+  results: REDDIT_COMMENTS_STREAM_FETCH_RESULTS,
+  pollTime: REDDIT_COMMENTS_POLLTIME
 };
 
 export default {
