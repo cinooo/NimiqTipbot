@@ -273,7 +273,7 @@ export default {
 
       // start the transaction send process
       const { balance: userBalance, publicAddress: userAddress, privateKey } = await dynamo.getUserPublicAddress(sourceAuthor, $);
-      if (userBalance < nimAmount) {
+      if (parseFloat(userBalance) < parseFloat(nimAmount)) {
         await this.replyChannel(replyMetadata, `Insufficient funds to make transaction.`);
         await dynamo.deleteTransaction({ commentId: tip.commentId });
         return;
