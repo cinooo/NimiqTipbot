@@ -195,7 +195,7 @@ export default {
       } = message;
 
       // console.log(channelId, messageId, content);
-      const singleSpaceContent = content.replace(/  /gm,' ');
+      const singleSpaceContent = content.replace(/ [ ]*/gm, ' ');
       const command = getBotCommand(singleSpaceContent);
       if (command) {
         const args = getBotCommandArguments(singleSpaceContent);
