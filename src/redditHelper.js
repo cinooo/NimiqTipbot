@@ -31,8 +31,12 @@ const REDDIT = {
   }
 };
 
+[${REDDIT.TOPICS.DEPOSIT}](https://np.reddit.com/message/compose/?to=${TIPBOT_USER_NAME}&subject=${REDDIT.TOPICS.DEPOSIT}&message=${encodeURIComponent('Deposit Nimiq!')}) |  | [${REDDIT.TOPICS.BALANCE}](https://np.reddit.com/message/compose/?to=${TIPBOT_USER_NAME}&subject=${REDDIT.TOPICS.BALANCE}&message=${encodeURIComponent('I want to check my balance!')}) | [Help](https://www.reddit.com/r/NimiqTipbot/comments/8mpksa/nimiqtipbot_howto_and_faq/) |
+[${REDDIT.TOPICS.DONATE}](${getNimDepositLink(DONATE_ADDRESS)}) |
+
+
 const messageFooter = `
-[${REDDIT.TOPICS.BALANCE} & ${REDDIT.TOPICS.DEPOSIT}](https://np.reddit.com/message/compose/?to=${TIPBOT_USER_NAME}&subject=${REDDIT.TOPICS.BALANCE}&message=${encodeURIComponent('I want to check my balance & see how to deposit!')}) | [Help](https://www.reddit.com/r/NimiqTipbot/comments/8mpksa/nimiqtipbot_howto_and_faq/) |
+[${REDDIT.TOPICS.BALANCE} & ${REDDIT.TOPICS.DEPOSIT}](https://np.reddit.com/message/compose/?to=${TIPBOT_USER_NAME}&subject=${REDDIT.TOPICS.BALANCE}&message=${encodeURIComponent('I want to check my balance & see how to deposit!')}) | [${REDDIT.TOPICS.WITHDRAW}](https://np.reddit.com/message/compose/?to=${TIPBOT_USER_NAME}&subject=${REDDIT.TOPICS.WITHDRAW}&message=${encodeURIComponent('I want to withdraw my NIM!\nreplace_this_sentence_with_a_digit_value\nreplace_this_sentence_with_your_NIM_address')}) [Help](https://www.reddit.com/r/NimiqTipbot/comments/8mpksa/nimiqtipbot_howto_and_faq/) |
 [What is Nimiq?](https://www.nimiq.com) | [Get Free NIM](https://nimiq-faucet.surge.sh/)`;
 
 const getTokenUrl = `https://${CLIENT_ID}:${CLIENT_SECRET}@www.reddit.com/api/v1/access_token`;
@@ -209,16 +213,16 @@ ${messageFooter}`;
 
     if (chunks.length !== 3) {
       return {
-        replyMessage: `Encountered a problem reading either the withdrawal amount or the NIM address, make sure you don't change the format of the reply message when submitting the withdrawal request (3 lines in the reply)`,
+        replyMessage: `Encountered a problem reading either the withdrawal amount or the NIM address, make sure you don't change the format of the reply message when submitting the withdrawal request (3 lines in the reply, digit amount on second line and wallet address on third line)`,
         replySubject
       };
     }
     // const withdrawNimReg = /[0-9]+\.?[0-9]{0,6}/;
     const withdrawNimReg = /\d*(\.\d{1,6})?/;
     const withdrawAmount = chunks[1].match(withdrawNimReg) ? chunks[1].match(withdrawNimReg)[0] : null;
-    if (withdrawAmount === null) {
+    if (withdrawAmount === null || isNaN(withdrawAmount))) {
       return {
-        replyMessage: `Encountered a problem reading the withdrawal amount, make sure it is a valid NIM amount`,
+        replyMessage: `Encountered a problem reading the withdrawal amount, make sure it is a valid NIM amount. The second sentence in the message should be a digit value.`,
         replySubject
       };
     }
