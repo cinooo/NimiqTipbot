@@ -195,9 +195,10 @@ export default {
       } = message;
 
       // console.log(channelId, messageId, content);
-      const command = getBotCommand(content);
+      const singleSpaceContent = content.replace(/  /gm,' ');
+      const command = getBotCommand(singleSpaceContent);
       if (command) {
-        const args = getBotCommandArguments(content);
+        const args = getBotCommandArguments(singleSpaceContent);
         console.log(`Detected bot command ${command} from ${username}#${discriminator}. Has args: ${args}`);
         const { replyMessage, sourceAuthor, sourceAddress, destinationAuthor, destinationAddress, sourceBalance, nimAmount, privateKey } =
         command === BOT_COMMAND_HELP || command === BOT_COMMAND_COMMANDS ? getReplyMessageForHelp()
