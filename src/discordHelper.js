@@ -184,9 +184,14 @@ export default {
           discriminator // unique identifier for user name
         },
         channel: {
-          id: channelId
+          id: channelId,
+          name: channelName
+        },
+        guild: {
+          name: guildName
         }
       } = message;
+
       // console.log(channelId, messageId, content);
       const command = getBotCommand(content);
       if (command) {
@@ -201,6 +206,12 @@ export default {
         let newReplyMessage;
         if (replyMessage) {
           newReplyMessage = await this.postMessage(message, replyMessage);
+        }
+
+        try {
+          await logMessageToHistoryChannel(`Command ${command}, ${guildName}: ${channelName} from ${username}#${discriminator}`);
+        } catch (e) {
+          console.log('Error logging to discord', e);
         }
 
         // need to record a tip for withdraw and tip commands
