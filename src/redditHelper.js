@@ -32,8 +32,7 @@ const REDDIT = {
 };
 
 const messageFooter = `
-[${REDDIT.TOPICS.DEPOSIT}](https://np.reddit.com/message/compose/?to=${TIPBOT_USER_NAME}&subject=${REDDIT.TOPICS.DEPOSIT}&message=${encodeURIComponent('Deposit Nimiq!')}) | [${REDDIT.TOPICS.WITHDRAW}](https://np.reddit.com/message/compose/?to=${TIPBOT_USER_NAME}&subject=${REDDIT.TOPICS.WITHDRAW}&message=${encodeURIComponent('I want to withdraw my NIM!\namount NIM\naddress here')}) | [${REDDIT.TOPICS.BALANCE}](https://np.reddit.com/message/compose/?to=${TIPBOT_USER_NAME}&subject=${REDDIT.TOPICS.BALANCE}&message=${encodeURIComponent('I want to check my balance!')}) | [Help](https://www.reddit.com/r/NimiqTipbot/comments/8mpksa/nimiqtipbot_howto_and_faq/) |
-[${REDDIT.TOPICS.DONATE}](${getNimDepositLink(DONATE_ADDRESS)}) |
+[${REDDIT.TOPICS.BALANCE} & ${REDDIT.TOPICS.DEPOSIT}](https://np.reddit.com/message/compose/?to=${TIPBOT_USER_NAME}&subject=${REDDIT.TOPICS.BALANCE}&message=${encodeURIComponent('I want to check my balance & see how to deposit!')}) | [Help](https://www.reddit.com/r/NimiqTipbot/comments/8mpksa/nimiqtipbot_howto_and_faq/) |
 [What is Nimiq?](https://www.nimiq.com) | [Get Free NIM](https://nimiq-faucet.surge.sh/)`;
 
 const getTokenUrl = `https://${CLIENT_ID}:${CLIENT_SECRET}@www.reddit.com/api/v1/access_token`;
@@ -194,7 +193,7 @@ e.g. +30.2 NIM
 
 Don't have any NIM? You can get some free NIM using this [faucet by @smitop](https://nimiq-faucet.surge.sh/)!
 
-Disclaimer: Please only deposit NIM that you are willing to lose to this address as there are no guarantees to this free service
+Disclaimer: The tipbot is a community run project, you should always secure your own NIM funds with a wallet you own the private keys to. For more information check out the [Nimiq Safe](http://safe.nimiq.com/) on how to secure your own NIM wallet!
 ${messageFooter}`;
     // console.log(replyMessage);
     return {
@@ -265,9 +264,9 @@ Your current balance is ${userBalance}
 
 You can deposit by visiting ${getNimDepositLink(userAddress)}
 
-Don't have any NIM? You can get some free NIM using this [faucet by @smitop](https://nimiq-faucet.surge.sh/)!
+Don't have any NIM? You can get some free NIM using this [faucet by @smitop](https://nimiq-faucet.surge.sh/?addr=${encodeURI(getNimDepositLink(userAddress))})!
 
-Disclaimer: Please only deposit NIM that you are willing to lose to this address as there are no guarantees to this free service
+Disclaimer: The tipbot is a community run project, you should always secure your own NIM funds with a wallet you own the private keys to. For more information check out the [Nimiq Safe](http://safe.nimiq.com/) on how to secure your own NIM wallet!
 ${messageFooter}`;
     // console.log(replyMessage);
     return {
