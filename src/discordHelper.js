@@ -103,6 +103,7 @@ e.g. !tip @cino#0628 3`);
       if (sourceAddress === destinationAddress) {
         return reply(`You can't tip to the same wallet address`);
       }
+      console.log(userBalance, nimAmount, parseFloat(userBalance), parseFloat(nimAmount), parseFloat(userBalance) >= parseFloat(nimAmount));
       if (parseFloat(userBalance) >= parseFloat(nimAmount)) {
         await logMessageToHistoryChannel(`Processing !tip from discord: ${discordUserId} for ${nimAmount} NIM`);
         return {
