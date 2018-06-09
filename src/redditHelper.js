@@ -134,7 +134,7 @@ export default {
 
         const comment = await this.R().get_comment(message.name);
 
-        const commentId = await comment.name;
+        const commentId = await comment.id;
         const body = await comment.body;
         const sourceAuthor = await comment.author.name;
         const linkId = await comment.link_id;
