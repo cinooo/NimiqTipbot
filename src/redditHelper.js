@@ -32,7 +32,7 @@ const REDDIT = {
 };
 
 const messageFooter = `
-[${REDDIT.TOPICS.BALANCE} & ${REDDIT.TOPICS.DEPOSIT}](https://np.reddit.com/message/compose/?to=${TIPBOT_USER_NAME}&subject=${REDDIT.TOPICS.BALANCE}&message=${encodeURIComponent('I want to check my balance & see how to deposit!')}) | [${REDDIT.TOPICS.WITHDRAW}](https://np.reddit.com/message/compose/?to=${TIPBOT_USER_NAME}&subject=${REDDIT.TOPICS.WITHDRAW}&message=${encodeURIComponent('I want to withdraw my NIM!\nreplace_this_sentence_with_a_digit_value\nreplace_this_sentence_with_your_NIM_address')}) [Help](https://www.reddit.com/r/NimiqTipbot/comments/8mpksa/nimiqtipbot_howto_and_faq/) |
+[${REDDIT.TOPICS.BALANCE} & ${REDDIT.TOPICS.DEPOSIT}](https://np.reddit.com/message/compose/?to=${TIPBOT_USER_NAME}&subject=${REDDIT.TOPICS.BALANCE}&message=${encodeURIComponent('I want to check my balance & see how to deposit!')}) | [${REDDIT.TOPICS.WITHDRAW}](https://np.reddit.com/message/compose/?to=${TIPBOT_USER_NAME}&subject=${REDDIT.TOPICS.WITHDRAW}&message=${encodeURIComponent('I want to withdraw my NIM!\nreplace_this_sentence_with_a_digit_value\nreplace_this_sentence_with_your_NIM_address')}) [Help](https://np.reddit.com/r/NimiqTipbot/comments/8mpksa/nimiqtipbot_howto_and_faq/) |
 [What is Nimiq?](https://www.nimiq.com) | [Get Free NIM](https://nimiq-faucet.surge.sh/)`;
 
 const getTokenUrl = `https://${CLIENT_ID}:${CLIENT_SECRET}@www.reddit.com/api/v1/access_token`;
