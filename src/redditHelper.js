@@ -109,8 +109,13 @@ export default {
   },
 
   async markMessageAsRead(messageId) {
-    console.log(`Marking ${messageId} as read`);
+    console.log(`Marking message ${messageId} as read`);
     await this.R().get_message(messageId).mark_as_read();
+  },
+
+  async markCommentMessageAsRead(messageId) {
+    console.log(`Marking comment message ${messageId} as read`);
+    await this.R().mark_messages_as_read([messageId]);
   },
 
   readMessages($) {
@@ -123,32 +128,37 @@ export default {
         await this.markMessageAsRead(message.id);
       }
 
-      // const summonedMessages = await this.getPrivateMessageComments();
-      // for (let i = 0; i < summonedMessages.length; i++) {
-      //   const message = summonedMessages[i];
-      //
-      //   const comment = await this.R().get_comment(message.id);
-      //   const commentId = await comment.id;
-      //   const body = await comment.body;
-      //   const sourceAuthor = await comment.author.name;
-      //   const linkId = await comment.link_id;
-      //   const parentId = await comment.parent_id;
-      //   const linkAuthor = await comment.link_author;
-      //   const linkPermalink = await comment.link_permalink;
-      //
-      //   console.log(commentId, body, sourceAuthor, linkId, parentId, linkAuthor, linkPermalink);
-      //   // await this.processCommentTip($, commentId, body, sourceAuthor, linkId, parentId, linkAuthor, linkPermalink);
-      //
-      //   await this.markMessageAsRead(message.id);
-      // }
+      const summonedMessages = await this.getPrivateMessageComments();
+      for (let i = 0; i < summonedMessages.length; i++) {
+        const message = summonedMessages[i];
+
+        const comment = await this.R().get_comment(message.name);
+
+        const commentId = await comment.name;
+        const body = await comment.body;
+        const sourceAuthor = await comment.author.name;
+        const linkId = await comment.link_id;
+        const parentId = await comment.parent_id;
+        // const linkAuthor = await comment.link_author;
+        const linkPermalink = message.context;
+
+        // for mentions it seems you need to fetch the parent in order to get the link_autho
+        const parentComment = await this.R().get_comment(parentId);
+        const linkAuthor = await parentComment.author.name;
+
+        // console.log(commentId, body, sourceAuthor, linkId, parentId, linkAuthor, linkPermalink);
+        await this.processCommentTip($, commentId, body, sourceAuthor, linkId, parentId, linkAuthor, linkPermalink);
+
+        await this.markCommentMessageAsRead(message.name);
+      }
     }, MESSAGES_POLL_TIME);
   },
 
   async getPrivateMessageComments() {
     const responses = await this.R().get_unread_messages({mark: false, limit: 5});
     // console.log('responses', responses);
-    // const usernameMentions = responses.filter(response => response.subject ===)
     const summonedMessages = responses.filter(response => response.was_comment === true && response.subject === 'username mention');
+    // console.log(summonedMessages);
     return summonedMessages;
   },
 
@@ -348,6 +358,21 @@ ${messageFooter}`;
     const matches = isNimTipReg.exec(body);
     const isNimTip = matches !== null;
     const nimAmount = isNimTip ? matches[1] : 0;
+
+//     const log =
+// `processCommentTip:
+//   commentId: ${commentId}
+//   body: ${body}
+//   sourceAuthor: ${sourceAuthor}
+//   linkId: ${linkId}
+//   parentId: ${parentId}
+//   linkAuthor: ${linkAuthor}
+//   linkPermalink: ${linkPermalink}
+//
+//   destinationAuthor: ${destinationAuthor}
+//   isNimTip: ${isNimTip}
+//   nimAmount: ${nimAmount}`;
+//     console.log(log);
 
     if (isNimTip) {
       // check to comment id to see if its already logged
