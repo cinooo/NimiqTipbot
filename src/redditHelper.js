@@ -358,7 +358,7 @@ ${messageFooter}`;
         // check if account balance of source is sufficient
         const { balance: sourceBalance, publicAddress: sourceAddress, privateKey } = await dynamo.getUserPublicAddress(sourceAuthor, $);
         const { publicAddress: destinationAddress } = await dynamo.getUserPublicAddress(destinationAuthor, $);
-        if (sourceBalance >= nimAmount) {
+        if (parseFloat(sourceBalance) >= parseFloat(nimAmount)) {
           console.log(`Recording reddit tip from ${sourceAuthor} for the amount ${nimAmount} to ${destinationAddress}`, linkPermalink);
           const newComment = await this.replyComment(commentId, `Processing tip to ${destinationAuthor} for ${nimAmount} NIM.`);
 
