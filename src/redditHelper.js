@@ -214,7 +214,7 @@ ${messageFooter}`;
       };
     }
     // const withdrawNimReg = /[0-9]+\.?[0-9]{0,6}/;
-    const withdrawNimReg = /\d?(\.\d{1,6})?/;
+    const withdrawNimReg = /\d*(\.\d{1,6})?/;
     const withdrawAmount = chunks[1].match(withdrawNimReg) ? chunks[1].match(withdrawNimReg)[0] : null;
     if (withdrawAmount === null) {
       return {
