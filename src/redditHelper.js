@@ -216,7 +216,7 @@ ${messageFooter}`;
     // const withdrawNimReg = /[0-9]+\.?[0-9]{0,6}/;
     const withdrawNimReg = /\d*(\.\d{1,6})?/;
     const withdrawAmount = chunks[1].match(withdrawNimReg) ? chunks[1].match(withdrawNimReg)[0] : null;
-    if (withdrawAmount === null || isNaN(withdrawAmount))) {
+    if (withdrawAmount === null || isNaN(withdrawAmount)) {
       return {
         replyMessage: `Encountered a problem reading the withdrawal amount, make sure it is a valid NIM amount. The second sentence in the message should be a digit value.`,
         replySubject
