@@ -85,7 +85,8 @@ e.g. !tip @cino#0628 3`);
   const isNimTipReg = /\d*(\.\d{1,6})?/mg;
   const matches = isNimTipReg.exec(argsNimAmount);
   const isNimTip = matches !== null;
-  const nimAmount = isNimTip ? matches[1] : 0;
+  const nimAmount = isNimTip ? matches[0] : 0;
+  console.log(isNimTip, matches[0]);
   if (nimAmount === 0) {
     return reply(`Please input a valid NIM amount in the format of X.XX e.g. 3 or 0.0008`);
   }
