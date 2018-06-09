@@ -156,7 +156,7 @@ export default {
   async getPrivateMessageComments() {
     const responses = await this.R().get_unread_messages({mark: false, limit: 5});
     // console.log('responses', responses);
-    const summonedMessages = responses.filter(response => response.was_comment === true && response.subject === 'username mention');
+    const summonedMessages = responses.filter(response => response.was_comment === true && (response.subject === 'username mention' || response.subject === 'post reply'));
     // console.log(summonedMessages);
     return summonedMessages;
   },
