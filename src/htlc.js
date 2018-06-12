@@ -176,16 +176,16 @@ import MnemonicPhrase from './phrase.js';
   // main
   await connect();
 
-  const secret = randomBytes(32);
+  // const secret = randomBytes(32);
   // const secret = 'secret!';
-  const txSecret = '0x' + Buffer.from(secret).toString('hex');
-  console.log('Secret:', txSecret);
+  // const txSecret = '0x' + Buffer.from(secret).toString('hex');
+  // console.log('Secret:', txSecret);
 
-  const value = '1';
-
-  const destinationRecipient = 'NQ52 BCNT 9X0Y GX7N T86X 7ELG 9GQH U5N8 27FE';
-
-  let hash = Nimiq.Hash.computeSha256(secret)
+  // const value = '1';
+  //
+  // const destinationRecipient = 'NQ52 BCNT 9X0Y GX7N T86X 7ELG 9GQH U5N8 27FE';
+  //
+  // let hash = Nimiq.Hash.computeSha256(secret)
   // const nimHtlcAddress = await deployHTLC(destinationRecipient, hash, value, 10);
 
   // const htlcAddress = 'NQ91 SUJ3 P0B7 773V YP96 QU2J RRTN YB5N YM8F';
