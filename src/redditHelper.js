@@ -383,7 +383,7 @@ ${messageFooter}`;
         const { balance: sourceBalance, publicAddress: sourceAddress, privateKey } = await dynamo.getUserPublicAddress(sourceAuthor, $);
         const { publicAddress: destinationAddress } = await dynamo.getUserPublicAddress(destinationAuthor, $);
         if (parseFloat(sourceBalance) >= parseFloat(nimAmount)) {
-          console.log(`Recording reddit tip from ${sourceAuthor} for the amount ${nimAmount} to ${destinationAddress}`, linkPermalink);
+          console.log(`Recording reddit tip commentId ${commentId} from ${sourceAuthor} for the amount ${nimAmount} to ${destinationAddress}`, linkPermalink);
           const newComment = await this.replyComment(commentId, `Processing tip to ${destinationAuthor} for ${nimAmount} NIM.`);
 
           // log the tip, it will be picked up later by a separate tip polling process
@@ -410,6 +410,8 @@ ${messageFooter}`;
           await this.replyComment(commentId, 'Insufficient balance found for your account please use the links to make a NIM deposit first.');
           await logMessageToHistoryChannel(`Processing !tip from reddit: Insufficient balance from ${sourceAuthor}`);
         }
+      } else {
+        console.log(`commentId: ${commentId} has already been logged.`)
       }
     }
   },
