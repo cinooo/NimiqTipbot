@@ -1,5 +1,5 @@
 /* eslint-disable */
-const {randomBytes} = require('crypto')
+const {randomBytes} = require('crypto');
 import './config.js';
 import MnemonicPhrase from './phrase.js';
 
@@ -184,8 +184,8 @@ import MnemonicPhrase from './phrase.js';
 
   const destinationRecipient = 'NQ52 BCNT 9X0Y GX7N T86X 7ELG 9GQH U5N8 27FE';
 
-  let hash = Nimiq.Hash.computeSha256(secret)
-  const nimHtlcAddress = await deployHTLC(nimRecipient, hash, value)
+  // let hash = Nimiq.Hash.computeSha256(secret)
+  // const nimHtlcAddress = await deployHTLC(destinationRecipient, hash, value)
 
   const htlcAddress = 'NQ91 SUJ3 P0B7 773V YP96 QU2J RRTN YB5N YM8F';
 
