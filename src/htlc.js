@@ -1,4 +1,5 @@
 /* eslint-disable */
+const {randomBytes} = require('crypto')
 import './config.js';
 import MnemonicPhrase from './phrase.js';
 
