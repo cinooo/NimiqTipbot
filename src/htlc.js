@@ -166,8 +166,8 @@ import MnemonicPhrase from './phrase.js';
     tx.proof.writeUint8(Nimiq.HashedTimeLockedContract.ProofType.REGULAR_TRANSFER)
     tx.proof.writeUint8(Nimiq.Hash.Algorithm.SHA256)
     tx.proof.writeUint8(1)
-    Nimiq.Hash.fromHex(hashRoot.substring(2)).serialize(tx.proof)
-    Nimiq.Hash.fromHex(preImage.substring(2)).serialize(tx.proof)
+    Nimiq.Hash.fromHex(hashRoot.slice(2)).serialize(tx.proof)
+    Nimiq.Hash.fromHex(preImage.slice(2)).serialize(tx.proof)
     sigProof.serialize(tx.proof)
     await sendTransaction(tx)
   }
@@ -185,9 +185,9 @@ import MnemonicPhrase from './phrase.js';
   //
   const destinationRecipient = 'NQ52 BCNT 9X0Y GX7N T86X 7ELG 9GQH U5N8 27FE';
   //
-  let hash = Nimiq.Hash.computeSha256(secret)
-  const newNimHtlcAddress = await deployHTLC(destinationRecipient, hash, value, 30);
-  console.log('newNimHtlcAddress', newNimHtlcAddress);
+  // let hash = Nimiq.Hash.computeSha256(secret)
+  // const newNimHtlcAddress = await deployHTLC(destinationRecipient, hash, value, 30);
+  // console.log('newNimHtlcAddress', newNimHtlcAddress);
 
   // const htlcAddress = 'NQ91 SUJ3 P0B7 773V YP96 QU2J RRTN YB5N YM8F';
 
@@ -197,7 +197,7 @@ import MnemonicPhrase from './phrase.js';
   const nimHtlcAddress = 'NQ82 UALD 39D0 PLHR DSGC 14SS XCMY UHKB K509';
   const txSecretOld = '0x541ee11ab06fc40bfd520f62258669084c08709a95070367da76d11e7c4bbdf6';
 
-  const nimHashSecret = verifyHTLC(nimHtlcAddress);
+  const nimHashSecret = await verifyHTLC(nimHtlcAddress);
   console.log(nimHashSecret);
   const txSecret2 = '';
   const res = await resolveHTLC(nimHtlcAddress, destinationRecipient, nimHashSecret, txSecretOld);
