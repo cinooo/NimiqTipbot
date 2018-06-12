@@ -199,7 +199,7 @@ import MnemonicPhrase from './phrase.js';
   const nimHashSecret = verifyHTLC(nimHtlcAddress);
   console.log(nimHashSecret);
   const txSecret2 = '';
-  const res = await resolveHTLC(nimHtlcAddress, destinationRecipient, txSecret, txSecret);
+  const res = await resolveHTLC(nimHtlcAddress, destinationRecipient, nimHashSecret, txSecret);
   console.log('res', res);
 
 })();
