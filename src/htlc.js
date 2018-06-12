@@ -186,17 +186,20 @@ import MnemonicPhrase from './phrase.js';
   const destinationRecipient = 'NQ52 BCNT 9X0Y GX7N T86X 7ELG 9GQH U5N8 27FE';
 
   let hash = Nimiq.Hash.computeSha256(secret)
-  const nimHtlcAddress = await deployHTLC(destinationRecipient, hash, value, 10);
+  // const nimHtlcAddress = await deployHTLC(destinationRecipient, hash, value, 10);
 
   // const htlcAddress = 'NQ91 SUJ3 P0B7 773V YP96 QU2J RRTN YB5N YM8F';
 
   // await refundHTLC(htlcAddress, destinationRecipient);
-  return;
+  // return;
+
+  const nimHtlcAddress = 'NQ82 UALD 39D0 PLHR DSGC 14SS XCMY UHKB K509';
+  const txSecret = '0x541ee11ab06fc40bfd520f62258669084c08709a95070367da76d11e7c4bbdf6';
 
   const nimHashSecret = verifyHTLC(nimHtlcAddress);
   console.log(nimHashSecret);
   const txSecret2 = '';
-  const res = await resolveHTLC(nimHtlcAddress, destinationRecipient, txSecret, txSecret);
+  const res = await resolveHTLC(nimHtlcAddress, destinationRecipient, txSecret, txSecret2);
   console.log('res', res);
 
 })();
