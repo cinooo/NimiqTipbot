@@ -8,6 +8,7 @@
     "webpack": "webpack --mode development --display-modules --progress --colors --config webpack.config.js",
     "watch": "babel src --out-dir build --copy-files --watch",
     "main": "npm run compile && node build/index.js",
+    "htlc": "npm run compile && node build/htlc.js",
     "clean": "rm -rf build && mkdir build",
     "package": "npm run lint && npm run compile",
     "compile": "npm run clean && babel src --out-dir build --copy-files"
