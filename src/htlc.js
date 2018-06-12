@@ -106,6 +106,26 @@ import MnemonicPhrase from './phrase.js';
     return tx.recipient.toUserFriendlyAddress()
   }
 
+  async function refundHTLC(address, recipient) {
+    address = Nimiq.Address.fromString(address)
+    recipient = Nimiq.Address.fromString(recipient)
+    const account = await $.consensus.getAccount(address)
+    const tx = new Nimiq.ExtendedTransaction(
+      address, Nimiq.Account.Type.HTLC,
+      recipient, Nimiq.Account.Type.BASIC,
+      account.balance, 0,
+      $.blockchain.height + 1,
+      Nimiq.Transaction.Flag.NONE, new Uint8Array(0))
+    const sig = Nimiq.Signature.create($.wallet.keyPair.privateKey, $.wallet.publicKey, tx.serializeContent())
+    const sigProof = new Nimiq.SignatureProof($.wallet.publicKey, new Nimiq.MerklePath([]), sig)
+    tx.proof = new Nimiq.SerialBuffer(1 + sigProof.serializedSize)
+    tx.proof.writeUint8(Nimiq.HashedTimeLockedContract.ProofType.TIMEOUT_RESOLVE)
+    sigProof.serialize(tx.proof)
+    await waitForBlock(account.timeout)
+    await sendTransaction(tx)
+  }
+
+
   async function verifyHTLC(address) {
     address = Nimiq.Address.fromString(address)
     const account = await $.consensus.getAccount(address)
@@ -150,6 +170,34 @@ import MnemonicPhrase from './phrase.js';
     sigProof.serialize(tx.proof)
     await sendTransaction(tx)
   }
+
+
+  // main
+  await connect();
+
+  const secret = randomBytes(32);
+  // const secret = 'secret!';
+  console.log('Secret:', '0x' + Buffer.from(secret).toString('hex'));
+
+  const value = '1';
+
+  const destinationRecipient = 'NQ52 BCNT 9X0Y GX7N T86X 7ELG 9GQH U5N8 27FE';
+
+  let hash = Nimiq.Hash.computeSha256(secret)
+  const nimHtlcAddress = await deployHTLC(nimRecipient, hash, value)
+
+  const htlcAddress = 'NQ91 SUJ3 P0B7 773V YP96 QU2J RRTN YB5N YM8F';
+
+  await refundHTLC(htlcAddress, destinationRecipient);
+  return;
+
+  const nimHashSecret = verifyHTLC(htlcAddress);
+  console.log(nimHashSecret);
+  const toRecipient = 'NQ52 BCNT 9X0Y GX7N T86X 7ELG 9GQH U5N8 27FE';
+  const txSecret = '0x45cd3a773e941a9b591658f49eaff1ec723ff6d17fa9d6156a86064651d1df9c';
+  const res = await resolveHTLC(htlcAddress, toRecipient, txSecret, txSecret);
+  console.log('res', res);
+
 
   // main
   await connect();
