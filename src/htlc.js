@@ -198,19 +198,4 @@ import MnemonicPhrase from './phrase.js';
   const res = await resolveHTLC(htlcAddress, toRecipient, txSecret, txSecret);
   console.log('res', res);
 
-
-  // main
-  await connect();
-
-  // const secret = randomBytes(32);
-  const secret = 'secret!';
-  console.log('Secret:', '0x' + Buffer.from(secret).toString('hex'));
-
-  const value = 0.0001;
-
-  const nimRecipient = 'NQ52 BCNT 9X0Y GX7N T86X 7ELG 9GQH U5N8 27FE';
-
-  let hash = Nimiq.Hash.computeSha256(secret)
-  const nimHtlcAddress = await deployHTLC(nimRecipient, hash, value)
-
 })();
