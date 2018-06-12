@@ -183,7 +183,7 @@ import MnemonicPhrase from './phrase.js';
 
   // const value = '1';
   //
-  // const destinationRecipient = 'NQ52 BCNT 9X0Y GX7N T86X 7ELG 9GQH U5N8 27FE';
+  const destinationRecipient = 'NQ52 BCNT 9X0Y GX7N T86X 7ELG 9GQH U5N8 27FE';
   //
   // let hash = Nimiq.Hash.computeSha256(secret)
   // const nimHtlcAddress = await deployHTLC(destinationRecipient, hash, value, 10);
