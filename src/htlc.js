@@ -99,9 +99,9 @@ import MnemonicPhrase from './phrase.js';
       value, 0, $.blockchain.height + 1, flags, buffer);
   }
 
-  async function deployHTLC(recipient, hash, value) {
+  async function deployHTLC(recipient, hash, value, timeout) {
     recipient = Nimiq.Address.fromString(recipient)
-    const tx = generateHtlcTransaction($.wallet.address, recipient, hash, value, 5)
+    const tx = generateHtlcTransaction($.wallet.address, recipient, hash, value, timeout)
     tx.proof = Nimiq.SignatureProof.singleSig($.wallet.publicKey, Nimiq.Signature.create($.wallet.keyPair.privateKey, $.wallet.publicKey, tx.serializeContent())).serialize()
     await sendTransaction(tx)
     return tx.recipient.toUserFriendlyAddress()
@@ -178,25 +178,25 @@ import MnemonicPhrase from './phrase.js';
 
   const secret = randomBytes(32);
   // const secret = 'secret!';
-  console.log('Secret:', '0x' + Buffer.from(secret).toString('hex'));
+  const txSecret = '0x' + Buffer.from(secret).toString('hex');
+  console.log('Secret:', txSecret);
 
   const value = '1';
 
   const destinationRecipient = 'NQ52 BCNT 9X0Y GX7N T86X 7ELG 9GQH U5N8 27FE';
 
-  // let hash = Nimiq.Hash.computeSha256(secret)
-  // const nimHtlcAddress = await deployHTLC(destinationRecipient, hash, value)
+  let hash = Nimiq.Hash.computeSha256(secret)
+  const nimHtlcAddress = await deployHTLC(destinationRecipient, hash, value, 10);
 
-  const htlcAddress = 'NQ91 SUJ3 P0B7 773V YP96 QU2J RRTN YB5N YM8F';
+  // const htlcAddress = 'NQ91 SUJ3 P0B7 773V YP96 QU2J RRTN YB5N YM8F';
 
-  await refundHTLC(htlcAddress, destinationRecipient);
+  // await refundHTLC(htlcAddress, destinationRecipient);
   return;
 
-  const nimHashSecret = verifyHTLC(htlcAddress);
+  const nimHashSecret = verifyHTLC(nimHtlcAddress);
   console.log(nimHashSecret);
-  const toRecipient = 'NQ52 BCNT 9X0Y GX7N T86X 7ELG 9GQH U5N8 27FE';
-  const txSecret = '0x45cd3a773e941a9b591658f49eaff1ec723ff6d17fa9d6156a86064651d1df9c';
-  const res = await resolveHTLC(htlcAddress, toRecipient, txSecret, txSecret);
+  const txSecret2 = '';
+  const res = await resolveHTLC(nimHtlcAddress, destinationRecipient, txSecret, txSecret);
   console.log('res', res);
 
 })();
