@@ -310,7 +310,7 @@ ${messageFooter}`;
         privateKey,
         nimAmount,
         replyMetadata: { // when the transaction later gets sent, this info is used to send the reply message back to user
-          reddit: {
+          reddit: { // withdrawals require the author name and subject
             authorName,
             subject: replySubject
           }
@@ -398,7 +398,8 @@ ${messageFooter}`;
             linkPermalink,
             replyMetadata: { // when the transaction later gets sent, this info is used to send the reply message back to user
               reddit: {
-                commentId: newComment.id
+                commentId: newComment.id, // the commentId gets edited later on transaction confirmation
+                destinationAuthor // the desintation author recieves a PM in their inbox about the tip with transaction details
               }
             },
             heightRecorded: $.getHeight($)

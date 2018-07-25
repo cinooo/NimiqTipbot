@@ -106,6 +106,12 @@ export default {
     };
   },
 
+  getWalletSeed(privateKey) {
+    const key = new Nimiq.PrivateKey(Buffer.from(privateKey, 'hex'));
+    const keyPair = Nimiq.KeyPair.derive(key);
+    return keyPair.toHex();
+  },
+
   getWalletFromPrivateKey(privateKey) {
     const key = new Nimiq.PrivateKey(Buffer.from(privateKey, 'hex'));
     const keyPair = Nimiq.KeyPair.derive(key);
@@ -205,7 +211,18 @@ export default {
         // might have to do a current block height versus heightAttempted check, but means need to do a db read
       }
     });
-    $.consensus.subscribeAccounts([transaction.recipient]);
+
+    const results = await dynamo.getTransactions(100);
+    const recipientAddresses = results.map(tip => {
+      const { destinationAddress } = tip;
+      return Nimiq.Address.fromUserFriendlyAddress(destinationAddress);
+    });
+    // const allRecipientAddresses = [
+    //   ...recipientAddresses,
+    //   transaction.recipient
+    // ];
+    $.consensus.subscribeAccounts(recipientAddresses);
+
     try {
       await $.consensus.relayTransaction(transaction);
       await logMessageToHistoryChannel(`relayTransaction, waiting to confirm, ${transaction.hash().toHex()}`);
