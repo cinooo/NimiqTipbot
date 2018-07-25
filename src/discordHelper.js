@@ -65,7 +65,7 @@ You can deposit by visiting ${getNimDepositLink(userAddress)}`
 
 const reply = (message) => { return { replyMessage: message }; };
 
-async function getReplyMessageForTip(messageId, authorId, args, content, $) {
+async function getReplyMessageForTip(messageId, authorId, args, niceName, content, $) {
   if (args.length !== 2) {
     return reply(`Wrong format for !tip command. Must follow the format of !tip @discorduserid [NIM Amount]
 e.g. !tip @cino#0628 3`);
@@ -106,7 +106,7 @@ e.g. !tip @cino#0628 3`);
       }
       console.log(userBalance, nimAmount, parseFloat(userBalance), parseFloat(nimAmount), parseFloat(userBalance) >= parseFloat(nimAmount));
       if (parseFloat(userBalance) >= parseFloat(nimAmount)) {
-        await logMessageToHistoryChannel(`Processing !tip from discord: ${discordUserId} for ${nimAmount} NIM`);
+        await logMessageToHistoryChannel(`Processing !tip from discord: ${niceName} for ${nimAmount} NIM`);
         return {
           replyMessage: `Processing tip to ${discordUserId} for ${nimAmount} NIM.`,
           sourceAuthor: authorId,
@@ -199,11 +199,12 @@ export default {
       const command = getBotCommand(singleSpaceContent);
       if (command) {
         const args = getBotCommandArguments(singleSpaceContent);
-        console.log(`Detected bot command ${command} from ${username}#${discriminator}. Has args: ${args}`);
+        const niceName = `@${username}#${discriminator}`;
+        console.log(`Detected bot command ${command} from ${niceName}. Has args: ${args}`);
         const { replyMessage, sourceAuthor, sourceAddress, destinationAuthor, destinationAddress, sourceBalance, nimAmount, privateKey } =
         command === BOT_COMMAND_HELP || command === BOT_COMMAND_COMMANDS ? getReplyMessageForHelp()
           : command === BOT_COMMAND_BALANCE || command === BOT_COMMAND_DEPOSIT ? await getReplyMessageForBalance(authorId, $)
-            : command === BOT_COMMAND_TIP ? await getReplyMessageForTip(messageId, authorId, args, content, $)
+            : command === BOT_COMMAND_TIP ? await getReplyMessageForTip(messageId, authorId, args, niceName, content, $)
               : command === BOT_COMMAND_WITHDRAW ? await getReplyMessageForWithdraw(messageId, authorId, args, content, $) : {};
 
         let newReplyMessage;
