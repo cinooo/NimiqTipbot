@@ -78,7 +78,7 @@ export default {
     const walletAddress = this.getWalletFromUserFriendlyAddress(address);
     try {
       const account = await $.consensus.getAccount(walletAddress);
-      const balance = account ? Nimiq.Policy.satoshisToCoins(account.balance).toFixed(2) : 0;
+      const balance = account ? Nimiq.Policy.satoshisToCoins(account.balance) : 0;
       console.log(`Address balance of ${address}: ${balance}`);
       return balance;
     } catch (e) {
@@ -214,13 +214,13 @@ export default {
 
     const results = await dynamo.getAllTransactions(100);
     const recipientAddresses = results.map(tip => {
-      console.log(tip);
+      // console.log(tip);
       const { destinationAddress } = tip;
-      console.log(destinationAddress);
+      // console.log(destinationAddress);
       return Nimiq.Address.fromUserFriendlyAddress(destinationAddress);
     });
-    console.log('recipientAddresses', recipientAddresses);
-    // const allRecipientAddresses = [
+    // console.log('recipientAddresses', recipientAddresses);
+    // const allRecipientAddress  es = [
     //   ...recipientAddresses,
     //   transaction.recipient
     // ];
