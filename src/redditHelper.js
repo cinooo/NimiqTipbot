@@ -373,6 +373,11 @@ ${messageFooter}`;
 //   nimAmount: ${nimAmount}`;
 //     console.log(log);
 
+    if (parseFloat(nimAmount) === 0 || parseFloat(nimAmount) < 0.00001) {
+      await this.replyComment(commentId, `Can't send a NIM amount smaller than 0.00001`);
+      return;
+    };
+
     if (isNimTip) {
       // check to comment id to see if its already logged
       const loggedComment = await dynamo.queryTransaction(commentId);

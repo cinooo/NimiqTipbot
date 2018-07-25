@@ -87,8 +87,11 @@ e.g. !tip @cino#0628 3`);
   const isNimTip = matches !== null;
   const nimAmount = isNimTip ? matches[0] : 0;
   console.log(isNimTip, matches[0]);
-  if (nimAmount === 0) {
+  if (parseFloat(nimAmount) === 0) {
     return reply(`Please input a valid NIM amount in the format of X.XX e.g. 3 or 0.0008`);
+  }
+  if (parseFloat(nimAmount) < 0.00001) {
+    return reply(`Can't send a NIM amount smaller than 0.00001`);
   }
 
   if (isNimTip) {
