@@ -212,7 +212,7 @@ export default {
       }
     });
 
-    const results = await dynamo.getTransactions(100);
+    const results = await dynamo.getAllTransactions(100);
     const recipientAddresses = results.map(tip => {
       console.log(tip);
       const { destinationAddress } = tip;

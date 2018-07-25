@@ -206,3 +206,21 @@ export const getTransactions = async (maxItems = 1) => {
   } while (lastEvaluatedKey && items.length < maxItems);
   return items;
 };
+
+export const getAllTransactions = async (maxItems = 1) => {
+  let lastEvaluatedKey;
+  let items = [];
+  // const newTransactions = transactions => transactions.filter(transaction => transaction.status === TIPS_STATUS_NEW);
+  do {
+    let response = await scan(DYNAMO_TABLE_TIPBOT_TRANSACTIONS, lastEvaluatedKey, maxItems);
+    await wait(1);
+    // console.log(Object.keys(response));
+    items = items.concat(response.Items);
+    lastEvaluatedKey = response.LastEvaluatedKey; // undefined if no more results left to scan
+
+    // only get transactions of New status
+    // items = newTransactions(items);
+    items = items.slice(0, maxItems);
+  } while (lastEvaluatedKey && items.length < maxItems);
+  return items;
+};
