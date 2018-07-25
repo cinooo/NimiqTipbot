@@ -90,11 +90,12 @@ e.g. !tip @cino#0628 3`);
   if (parseFloat(nimAmount) === 0) {
     return reply(`Please input a valid NIM amount in the format of X.XX e.g. 3 or 0.0008`);
   }
-  if (parseFloat(nimAmount) < 0.00001) {
+
+  if (parseFloat(nimAmount) < 0.00001 && parseFloat(nimAmount) !== 0) {
     return reply(`Can't send a NIM amount smaller than 0.00001`);
   }
 
-  if (isNimTip) {
+  if (isNimTip && parseFloat(nimAmount) >= 0.00001) {
     // check to comment id to see if its already paid
     const loggedComment = await dynamo.queryTransaction(messageId);
     const hasNotBeenLogged = loggedComment.Count === 0;
