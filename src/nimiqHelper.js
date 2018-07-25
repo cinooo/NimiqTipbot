@@ -215,8 +215,10 @@ export default {
     const results = await dynamo.getTransactions(100);
     const recipientAddresses = results.map(tip => {
       const { destinationAddress } = tip;
+      console.log(destinationAddress);
       return Nimiq.Address.fromUserFriendlyAddress(destinationAddress);
     });
+    console.log('recipientAddresses', recipientAddresses);
     // const allRecipientAddresses = [
     //   ...recipientAddresses,
     //   transaction.recipient
