@@ -217,7 +217,7 @@ export default {
       // console.log(tip);
       const { destinationAddress, rainDestinations } = tip;
       // console.log(destinationAddress);
-      if (Array.isArray(rainDestinations) && typeof destinationAddress !== 'undefined') {
+      if (Array.isArray(rainDestinations) && typeof destinationAddress === 'undefined') {
         return Nimiq.Address.fromUserFriendlyAddress(rainDestinations.destinationAddress);
       } else {
         return Nimiq.Address.fromUserFriendlyAddress(destinationAddress);
