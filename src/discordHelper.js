@@ -48,7 +48,10 @@ e.g. !tip @cino#0628 3
 !withdraw [NIM address] - Withdraw your entire NIM balance to the NIM address you specify.
 e.g. !withdraw NQ52 BCNT 9X0Y GX7N T86X 7ELG 9GQH U5N8 27FE
 
-!deposit - Gives instructions on how to deposit`
+!deposit - Gives instructions on how to deposit
+
+!rain [total_NIM_amount_to_rain] [number_of_ppl_to_rain_to] - sends NIM to a random number of users, max 10
+`
   };
 };
 
