@@ -213,14 +213,20 @@ export default {
     });
 
     const results = await dynamo.getAllTransactions(1000);
-    const recipientAddresses = results.map(tip => {
+    const recipientAddresses = results.reduce((acc, tip) => {
       // console.log(tip);
       const { destinationAddress, rainDestinations } = tip;
       // console.log(destinationAddress);
       if (Array.isArray(rainDestinations) && typeof destinationAddress === 'undefined') {
-        return Nimiq.Address.fromUserFriendlyAddress(rainDestinations.destinationAddress);
+        return [
+          ...acc,
+          ...rainDestinations.map(destination => Nimiq.Address.fromUserFriendlyAddress(destination.destinationAddress))
+        ];
       } else {
-        return Nimiq.Address.fromUserFriendlyAddress(destinationAddress);
+        return [
+          ...acc,
+          Nimiq.Address.fromUserFriendlyAddress(destinationAddress)
+        ];
       }
     });
 
