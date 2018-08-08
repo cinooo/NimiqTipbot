@@ -16,7 +16,8 @@ const BOT_COMMAND_TIP = '!tip';
 const BOT_COMMAND_WITHDRAW = '!withdraw';
 const BOT_COMMAND_BALANCE = '!balance';
 const BOT_COMMAND_DEPOSIT = '!deposit';
-const BOT_AVAILABLE_COMMANDS = [BOT_COMMAND_HELP, BOT_COMMAND_COMMANDS, BOT_COMMAND_TIP, BOT_COMMAND_WITHDRAW, BOT_COMMAND_BALANCE, BOT_COMMAND_DEPOSIT];
+const BOT_COMMAND_RAIN = '!rain';
+const BOT_AVAILABLE_COMMANDS = [BOT_COMMAND_HELP, BOT_COMMAND_COMMANDS, BOT_COMMAND_TIP, BOT_COMMAND_WITHDRAW, BOT_COMMAND_BALANCE, BOT_COMMAND_DEPOSIT, BOT_COMMAND_RAIN];
 const SOURCE = 'Discord';
 
 const getBotCommand = content => {
@@ -103,11 +104,17 @@ e.g. !tip @cino#0628 3`);
       // originating source
       // check if account balance of source is sufficient
       const { balance: userBalance, publicAddress: sourceAddress, privateKey } = await dynamo.getUserPublicAddress(authorId, $);
-      const { publicAddress: destinationAddress } = await dynamo.getUserPublicAddress(discordUserId, $);
+      const { publicAddress: destinationAddress } = await dynamo.getUserPublicAddress(discordUserId, $, false);
 
       if (sourceAddress === destinationAddress) {
         return reply(`You can't tip to the same wallet address`);
       }
+
+      // Check the user has not reached MAX_USER_TRANSACTION_LIMIT
+      if (await dynamo.userHasReachedTransactionLimit(authorId)) {
+        return reply(`Maximum limit of 10 transactions per account source reached, please try again in a minute, this is to prevent spam.`);
+      };
+
       console.log(userBalance, nimAmount, parseFloat(userBalance), parseFloat(nimAmount), parseFloat(userBalance) >= parseFloat(nimAmount));
       if (parseFloat(userBalance) >= parseFloat(nimAmount)) {
         await logMessageToHistoryChannel(`Processing !tip from discord: ${niceName} for ${nimAmount} NIM`);
@@ -148,6 +155,11 @@ e.g. !withdraw NQ52 BCNT 9X0Y GX7N T86X 7ELG 9GQH U5N8 27FE`);
     return reply(`Insufficient NIM in balance.`);
   }
 
+  // Check the user has not reached MAX_USER_TRANSACTION_LIMIT
+  if (await dynamo.userHasReachedTransactionLimit(authorId)) {
+    return reply(`Maximum limit of 10 transactions per account source reached, please try again in a minute, this is to prevent spam.`);
+  };
+
   await logMessageToHistoryChannel(`Withdrawal from discord: ${authorId}`);
 
   // otherwise message saying process the withdraw request!
@@ -162,6 +174,101 @@ e.g. !withdraw NQ52 BCNT 9X0Y GX7N T86X 7ELG 9GQH U5N8 27FE`);
     privateKey
   };
 };
+
+function getRandomSubarray(arr, size) {
+  let shuffled = arr.slice(0);
+  let i = arr.length;
+  let temp;
+  let index;
+  while (i--) {
+    index = Math.floor((i + 1) * Math.random());
+    temp = shuffled[index];
+    shuffled[index] = shuffled[i];
+    shuffled[i] = temp;
+  }
+  return shuffled.slice(0, size);
+}
+
+async function getReplyMessageForRain(messageId, authorId, args, content, $, message) {
+  // !rain 10
+  // console.log(args, args.length);
+  if (args.length !== 2) {
+    return reply(`Wrong format for !rain command, use:
+!rain [total_NIM_amount_to_rain] [number_of_ppl_to_rain_to]`);
+  };
+
+  const nimAmount = parseFloat(args[0]);
+  const rainToNumber = parseInt(args[1]);
+
+  if (isNaN(nimAmount) || nimAmount < 0.0001) {
+    return reply(`Use a valid whole number for the NIM rain amount`);
+  };
+
+  if (isNaN(rainToNumber) || rainToNumber < 1 || rainToNumber > 10) {
+    return reply(`Please choose a number between 1 and 10 persons`);
+  };
+
+  const isNotBot = member => member.user.bot === false;
+  const isNotOriginatingAuthor = member => member.user.id !== authorId;
+  const members = message.guild.members.reduce((acc, member) => {
+    return isNotBot(member) && isNotOriginatingAuthor(member) ? [
+      ...acc,
+      member
+    ] : acc;
+  }, []);
+  // console.log(members);
+
+  // return reply(`hello <@361767686222512130>`);
+
+  if (members.length < rainToNumber) {
+    return reply(`There has to be at least ${rainToNumber} other members on this server to use the !rain command`);
+  };
+
+  const { balance: sourceBalance, publicAddress: sourceAddress, privateKey } = await dynamo.getUserPublicAddress(authorId, $);
+  if (parseFloat(sourceBalance) < nimAmount) {
+    return reply(`Insufficient NIM in balance.`);
+  }
+
+  // Check the user has not reached MAX_USER_TRANSACTION_LIMIT
+  if (await dynamo.userHasReachedTransactionLimit(authorId, rainToNumber)) {
+    return reply(`Maximum limit of 10 transactions per account source reached, please try again in a minute, this is to prevent spam.`);
+  };
+
+  await logMessageToHistoryChannel(`Processing rain from discord: ${authorId} - nim amount ${nimAmount}, rain number ${rainToNumber}`);
+
+  // ensure that there is enough to split between everyone and it is rounded down
+  const individualRainAmount = Math.floor(nimAmount / rainToNumber * 100000) / 100000;
+  console.log(individualRainAmount);
+
+  const chosenMembers = getRandomSubarray(members, rainToNumber);
+  const membersIdListString = chosenMembers.reduce((acc, member) => {
+    return `<@${member.user.id}> ${acc}`.trim();
+  }, '');
+  const getRainDestinations = chosenMembers.map(member => {
+    const destinationAuthor = member.user.id;
+    return dynamo.getUserPublicAddress(destinationAuthor, $, false)
+      .then(response => {
+        const { publicAddress: destinationAddress } = response;
+        return {
+          destinationAuthor,
+          destinationAddress
+        };
+      });
+  });
+
+  const rainDestinations = await Promise.all(getRainDestinations);
+  const response = {
+    replyMessage: `Sending ${individualRainAmount} each to ${membersIdListString}`,
+    sourceAuthor: authorId,
+    sourceAddress,
+    sourceBalance,
+    privateKey,
+    rainDestinations,
+    nimAmount: individualRainAmount
+  };
+  console.log('rain response', response);
+  return response;
+}
 
 export async function logMessageToHistoryChannel(message) {
   // 452985675659083778 453353690707918848 hi
@@ -198,19 +305,32 @@ export default {
         }
       } = message;
 
+      // console.log(message.guild);
       // console.log(channelId, messageId, content);
+
       const singleSpaceContent = content.replace(/ [ ]*/gm, ' ');
       const command = getBotCommand(singleSpaceContent);
       if (command) {
         const args = getBotCommandArguments(singleSpaceContent);
         const niceName = `@${username}#${discriminator}`;
         console.log(`Detected bot command ${command} from ${niceName}. Has args: ${args}`);
-        const { replyMessage, sourceAuthor, sourceAddress, destinationAuthor, destinationAddress, sourceBalance, nimAmount, privateKey } =
-        command === BOT_COMMAND_HELP || command === BOT_COMMAND_COMMANDS ? getReplyMessageForHelp()
+        const {
+          replyMessage,
+          sourceAuthor,
+          sourceAddress,
+          destinationAuthor,
+          destinationAddress,
+          sourceBalance,
+          nimAmount,
+          privateKey,
+          rainDestinations // only returned by BOT_COMMAND_RAIN
+        } = command === BOT_COMMAND_HELP || command === BOT_COMMAND_COMMANDS ? getReplyMessageForHelp()
           : command === BOT_COMMAND_BALANCE || command === BOT_COMMAND_DEPOSIT ? await getReplyMessageForBalance(authorId, $)
             : command === BOT_COMMAND_TIP ? await getReplyMessageForTip(messageId, authorId, args, niceName, content, $)
-              : command === BOT_COMMAND_WITHDRAW ? await getReplyMessageForWithdraw(messageId, authorId, args, content, $) : {};
+              : command === BOT_COMMAND_WITHDRAW ? await getReplyMessageForWithdraw(messageId, authorId, args, content, $)
+                : command === BOT_COMMAND_RAIN ? await getReplyMessageForRain(messageId, authorId, args, content, $, message) : {};
 
+        // the replyMessage creates a new message id - this message id later is used and edited with the transaction details
         let newReplyMessage;
         if (replyMessage) {
           newReplyMessage = await this.postMessage(message, replyMessage);
@@ -223,7 +343,7 @@ export default {
         }
 
         // need to record a tip for withdraw and tip commands
-        if (typeof privateKey !== 'undefined' && typeof destinationAddress !== 'undefined' && typeof nimAmount !== 'undefined') {
+        if (command === BOT_COMMAND_TIP && typeof privateKey !== 'undefined' && typeof destinationAddress !== 'undefined' && typeof nimAmount !== 'undefined') {
           console.log(`Recording discord tip amount for ${sourceAuthor} for ${nimAmount} to ${destinationAddress}`);
           // log that comment has been paid
           await dynamo.putTransaction(messageId, {
@@ -234,6 +354,25 @@ export default {
             destinationAddress,
             privateKey,
             nimAmount,
+            replyMetadata: { // when the transaction later gets sent, this info is used to send the reply message back to user
+              discord: {
+                channelId,
+                ...newReplyMessage && { messageId: newReplyMessage.id }
+              }
+            },
+            heightRecorded: $.getHeight($)
+          });
+        }
+
+        if (command === BOT_COMMAND_RAIN && typeof nimAmount !== 'undefined' && Array.isArray(rainDestinations)) {
+          console.log(`Recording discord rain amount from ${sourceAuthor} for ${nimAmount} to ${rainDestinations.length} accounts`);
+          await dynamo.putTransaction(messageId, {
+            sourceAuthor,
+            sourceAddress,
+            sourceBalance,
+            nimAmount,
+            privateKey,
+            rainDestinations,
             replyMetadata: { // when the transaction later gets sent, this info is used to send the reply message back to user
               discord: {
                 channelId,

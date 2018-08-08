@@ -212,18 +212,18 @@ export default {
       }
     });
 
-    const results = await dynamo.getAllTransactions(100);
+    const results = await dynamo.getAllTransactions(1000);
     const recipientAddresses = results.map(tip => {
       // console.log(tip);
-      const { destinationAddress } = tip;
+      const { destinationAddress, rainDestinations } = tip;
       // console.log(destinationAddress);
-      return Nimiq.Address.fromUserFriendlyAddress(destinationAddress);
+      if (Array.isArray(rainDestinations) && typeof destinationAddress !== 'undefined') {
+        return Nimiq.Address.fromUserFriendlyAddress(rainDestinations.destinationAddress);
+      } else {
+        return Nimiq.Address.fromUserFriendlyAddress(destinationAddress);
+      }
     });
-    // console.log('recipientAddresses', recipientAddresses);
-    // const allRecipientAddress  es = [
-    //   ...recipientAddresses,
-    //   transaction.recipient
-    // ];
+
     $.consensus.subscribeAccounts(recipientAddresses);
 
     try {
@@ -275,7 +275,14 @@ export default {
     const unprocessedTips = getNonPendingTips(results);
     for (let i = 0; i < unprocessedTips.length; i++) {
       const tip = unprocessedTips[i];
-      const { commentId, sourceAuthor, nimAmount, destinationAddress, replyMetadata } = tip;
+      const {
+        commentId,
+        sourceAuthor,
+        nimAmount,
+        destinationAddress, // default address per single tx but undefined if its a !rain
+        rainDestinations, // passed in if !rain from discord
+        replyMetadata
+      } = tip;
       console.log(commentId);
 
       // set it to pending to prevent it being picked up by future poll processes
@@ -292,7 +299,7 @@ export default {
       await dynamo.updateTransaction(commentId, updateAttributes);
 
       // start the transaction send process
-      const { balance: userBalance, publicAddress: userAddress, privateKey } = await dynamo.getUserPublicAddress(sourceAuthor, $);
+      const { balance: userBalance, privateKey } = await dynamo.getUserPublicAddress(sourceAuthor, $);
       if (parseFloat(userBalance) < parseFloat(nimAmount)) {
         await this.replyChannel(replyMetadata, `Insufficient funds to make transaction.`);
         await dynamo.deleteTransaction({ commentId: tip.commentId });
@@ -305,7 +312,15 @@ export default {
         };
       })(replyMetadata);
 
-      await $.sendTransaction(privateKey, destinationAddress, nimAmount, tip, replyFn);
+      if (Array.isArray(rainDestinations) && typeof destinationAddress === 'undefined') {
+        const sendTransactions = rainDestinations.map(destinations => {
+          return $.sendTransaction(privateKey, destinations.destinationAddress, nimAmount, tip, replyFn);
+        })
+        await Promise.all(sendTransactions);
+      } else {
+        // single transaction
+        await $.sendTransaction(privateKey, destinationAddress, nimAmount, tip, replyFn);
+      }
     };
   },
 

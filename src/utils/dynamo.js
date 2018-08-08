@@ -74,6 +74,23 @@ export const putUser = async ({ authorName, privateKey, phrases, publicAddress }
   return dynamo.put(params).promise();
 };
 
+// before put transaction, should check if the user has hit a transaction limit
+// this is to prevent spam. User shouldn't have more than 10 pending transactions
+export const userHasReachedTransactionLimit = async (sourceAuthorId, numberOfNewTransactions = 1) => {
+  const transactions = await getAllTransactions(1000);
+  const userTransactions = transactions.filter(transaction => transaction.sourceAuthor === sourceAuthorId);
+  const totalUserTransactions = userTransactions.reduce((acc, transaction) => {
+    const { rainDestinations } = transaction;
+    const isBulkTransaction = Array.isArray(rainDestinations);
+    return isBulkTransaction ? acc + rainDestinations.length : acc + 1;
+  }, 0);
+  return (totalUserTransactions + numberOfNewTransactions) > 10; // current max of 10 transactions, coincides with free tier fees per address source
+};
+
+export const putBulkTransactions = async (commentId, loggedDetails, time = new Date().getTime()) => {
+  // must have loggedDetails.sourceAuthor
+}
+
 export const putTransaction = async (commentId, loggedDetails, time = new Date().getTime()) => {
   let params = {
     TableName: `${DYNAMO_TABLE_TIPBOT_TRANSACTIONS}`,
@@ -126,7 +143,7 @@ export const updateTransaction = async (commentId, attributesToUpdate) => {
 };
 
 // get a reddit user's public address, create one if it doesnt exist
-export async function getUserPublicAddress(authorName, $) {
+export async function getUserPublicAddress(authorName, $, fetchUserBalance = true) {
   const results = await queryUser(authorName);
   const { privateKey, phrases, publicAddress } = results.Count === 0 ? await nimiqHelper.generateAddress() : results.Items[0];
   if (results.Count === 0) {
@@ -134,7 +151,7 @@ export async function getUserPublicAddress(authorName, $) {
     // save the user if it is a newly generated one
     await putUser({authorName, privateKey, publicAddress, phrases});
   }
-  const balance = await $.getBalance(publicAddress);
+  const balance = fetchUserBalance ? await $.getBalance(publicAddress) : 0;
   return {
     balance,
     publicAddress,
