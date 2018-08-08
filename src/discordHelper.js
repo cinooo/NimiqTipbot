@@ -50,8 +50,7 @@ e.g. !withdraw NQ52 BCNT 9X0Y GX7N T86X 7ELG 9GQH U5N8 27FE
 
 !deposit - Gives instructions on how to deposit
 
-!rain [total_NIM_amount_to_rain] [number_of_ppl_to_rain_to] - sends NIM to a random number of users, max 10
-`
+!rain [total_NIM_amount_to_rain] [number_of_ppl_to_rain_to] - sends NIM to a random number of users, max 10`
   };
 };
 
@@ -350,7 +349,7 @@ export default {
         }
 
         // need to record a tip for withdraw and tip commands
-        if (command === BOT_COMMAND_TIP && typeof privateKey !== 'undefined' && typeof destinationAddress !== 'undefined' && typeof nimAmount !== 'undefined') {
+        if ((command === BOT_COMMAND_TIP || command === BOT_COMMAND_WITHDRAW) && typeof privateKey !== 'undefined' && typeof destinationAddress !== 'undefined' && typeof nimAmount !== 'undefined') {
           console.log(`Recording discord tip amount for ${sourceAuthor} for ${nimAmount} to ${destinationAddress}`);
           // log that comment has been paid
           await dynamo.putTransaction(messageId, {
