@@ -228,7 +228,7 @@ export default {
           Nimiq.Address.fromUserFriendlyAddress(destinationAddress)
         ];
       }
-    });
+    }, []);
 
     $.consensus.subscribeAccounts(recipientAddresses);
 
