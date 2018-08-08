@@ -197,13 +197,14 @@ export default {
       if (transaction.equals(tx2)) {
         const logMessage = `Block height ${$.blockchain.height} transaction mined ${tx2.hash().toHex()}`;
         console.log(logMessage);
+        const transactionHash = Array.isArray(tip.rainDestinations) ? $.getHeight($) : tx2.hash().toHex();
         if (fn) {
-          await fn(`NIM successfully sent!`, tx2.hash().toHex());
+          await fn(`NIM successfully sent!`, transactionHash);
         }
         // console.log('deleteTransaction', tip, tip.commentId);
         // remove the record from dynamo
         await dynamo.deleteTransaction({ commentId: tip.commentId });
-        await dynamo.archiveTransaction({ ...tip, transactionHash: tx2.hash().toHex(), heightCompleted: $.getHeight($) });
+        await dynamo.archiveTransaction({ ...tip, transactionHash, heightCompleted: $.getHeight($) });
         $.mempool.off('transaction-mined', id);
         await logMessageToHistoryChannel(logMessage);
       } else {
@@ -249,11 +250,14 @@ export default {
   async replyChannel(replyMetadata, replyMessage, transactionHash) {
     const { reddit: redditMetadata, discord: discordMetadata } = replyMetadata;
     const viewTransactionUrl = `https://nimiq.mopsus.com/tx/0x${transactionHash}`;
+    const viewBlockUrl = `https://nimiq.mopsus.com/block/${transactionHash}`;
     const message =
       transactionHash && redditMetadata
         ? `${replyMessage} [View the transaction](${viewTransactionUrl})`
         : transactionHash && discordMetadata
-          ? `${replyMessage} View the transaction: <${viewTransactionUrl}>`
+          ? transactionHash.length === 64
+            ? `${replyMessage} View the transaction: <${viewTransactionUrl}>`
+            : `${replyMessage} View the transactions: <${viewBlockUrl}>`
           : replyMessage;
     // this is posting a personal message to a reddit user's inbox for withdrawals
     if (redditMetadata && redditMetadata.authorName && redditMetadata.subject) {
