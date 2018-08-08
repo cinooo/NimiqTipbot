@@ -257,7 +257,7 @@ export default {
         : transactionHash && discordMetadata
           ? transactionHash.length === 64
             ? `${replyMessage} View the transaction: <${viewTransactionUrl}>`
-            : `${replyMessage} View the transactions: <${viewBlockUrl}>`
+            : `${replyMessage} View the block: <${viewBlockUrl}>`
           : replyMessage;
     // this is posting a personal message to a reddit user's inbox for withdrawals
     if (redditMetadata && redditMetadata.authorName && redditMetadata.subject) {
