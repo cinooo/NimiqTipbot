@@ -200,9 +200,13 @@ async function getReplyMessageForRain(messageId, authorId, args, content, $, mes
   const nimAmount = parseFloat(args[0]);
   const rainToNumber = parseInt(args[1]);
 
-  if (isNaN(nimAmount) || nimAmount < 0.0001) {
+  if (isNaN(nimAmount)) {
     return reply(`Use a valid whole number for the NIM rain amount`);
   };
+
+  if (nimAmount < 0.0001) {
+    return reply(`Minimum amount to rain is 0.0001`);
+  }
 
   if (isNaN(rainToNumber) || rainToNumber < 1 || rainToNumber > 10) {
     return reply(`Please choose a number between 1 and 10 persons`);
