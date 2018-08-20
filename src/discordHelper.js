@@ -328,7 +328,7 @@ export default {
       // console.log(message.guild);
       // console.log(channelId, messageId, content);
       // console.log(message.guild.name, message.guild.presences.array().length, message.guild.presences.filter(presence => presence.status === 'online').array().length);
-      console.log(message.guild.name, message.guild.members.array().length, message.guild.members.filter(member => member.presence.status === 'online').array().length);
+      // console.log(message.guild.name, message.guild.members.array().length, message.guild.members.filter(member => member.presence.status === 'online').array().length);
       // console.log(message.guild.presences.values().length);
       // console.log(message.guild.members.length);
 
