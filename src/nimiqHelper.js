@@ -199,7 +199,7 @@ export default {
     var transaction = wallet.createTransaction(
       destinationAddress, // who we are sending to
       satoshis, // amount in satoshi (no decimal format)
-      fees, // fee
+      parseInt(fees), // fee
       $.consensus.blockchain.head.height);
 
     const id = $.mempool.on('transaction-mined', async tx2 => {
