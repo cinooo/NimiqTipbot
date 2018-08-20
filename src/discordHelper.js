@@ -18,11 +18,12 @@ const BOT_COMMAND_WITHDRAW = '!withdraw';
 const BOT_COMMAND_BALANCE = '!balance';
 const BOT_COMMAND_DEPOSIT = '!deposit';
 const BOT_COMMAND_RAIN = '!rain';
-const BOT_AVAILABLE_COMMANDS = [BOT_COMMAND_HELP, BOT_COMMAND_COMMANDS, BOT_COMMAND_TIP, BOT_COMMAND_WITHDRAW, BOT_COMMAND_BALANCE, BOT_COMMAND_DEPOSIT, BOT_COMMAND_RAIN];
+const BOT_COMMAND_SOAK = '!soak';
+const BOT_AVAILABLE_COMMANDS = [BOT_COMMAND_HELP, BOT_COMMAND_COMMANDS, BOT_COMMAND_TIP, BOT_COMMAND_WITHDRAW, BOT_COMMAND_BALANCE, BOT_COMMAND_DEPOSIT, BOT_COMMAND_RAIN, BOT_COMMAND_SOAK];
 const SOURCE = 'Discord';
 
 const getBotCommand = content => {
-  const command = content.split(' ')[0];
+  const command = content.split(' ')[0].toLowerCase();
   // returns the command or undefined
   return BOT_AVAILABLE_COMMANDS.filter(availableCommand => command === availableCommand)[0];
 };
@@ -352,7 +353,7 @@ export default {
           : command === BOT_COMMAND_BALANCE || command === BOT_COMMAND_DEPOSIT ? await getReplyMessageForBalance(authorId, $)
             : command === BOT_COMMAND_TIP ? await getReplyMessageForTip(messageId, authorId, args, niceName, content, $)
               : command === BOT_COMMAND_WITHDRAW ? await getReplyMessageForWithdraw(messageId, authorId, args, content, $)
-                : command === BOT_COMMAND_RAIN ? await getReplyMessageForRainOrSoak('rain', messageId, authorId, args, content, $, message) : {};
+                : (command === BOT_COMMAND_RAIN || command === BOT_COMMAND_SOAK) ? await getReplyMessageForRainOrSoak(command, messageId, authorId, args, content, $, message) : {};
 
         // the replyMessage creates a new message id - this message id later is used and edited with the transaction details
         let newReplyMessage;
@@ -388,8 +389,8 @@ export default {
           });
         }
 
-        if (command === BOT_COMMAND_RAIN && typeof nimAmount !== 'undefined' && Array.isArray(rainDestinations)) {
-          console.log(`Recording discord rain amount from ${sourceAuthor} for ${nimAmount} to ${rainDestinations.length} accounts`);
+        if ((command === BOT_COMMAND_RAIN || command === BOT_COMMAND_SOAK) && typeof nimAmount !== 'undefined' && Array.isArray(rainDestinations)) {
+          console.log(`Recording discord ${command} amount from ${sourceAuthor} for ${nimAmount} to ${rainDestinations.length} accounts`);
           await dynamo.putTransaction(messageId, {
             sourceAuthor,
             sourceAddress,
