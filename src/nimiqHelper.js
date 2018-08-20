@@ -309,7 +309,7 @@ export default {
       await dynamo.updateTransaction(commentId, updateAttributes);
 
       // start the transaction send process
-      const { balance: userBalance, privateKey } = await dynamo.getUserPublicAddress(sourceAuthor, $);
+      const { balance: userBalance, publicAddress, privateKey } = await dynamo.getUserPublicAddress(sourceAuthor, $);
       if (parseFloat(userBalance) < parseFloat(nimAmount)) {
         await this.replyChannel(replyMetadata, `Insufficient funds to make transaction.`);
         await dynamo.deleteTransaction({ commentId: tip.commentId });
@@ -321,11 +321,18 @@ export default {
           this.replyChannel(replyMetadata, replyMessage, transactionHash);
         };
       })(replyMetadata);
-
+      console.log('send tx, mempool number of tx', $.mempool.getTransactions().length);
       if (Array.isArray(rainDestinations) && typeof destinationAddress === 'undefined') {
         const sendTransactions = rainDestinations.map(destinations => {
+          const sourceTotalTxInMempool = $.mempool.getTransactions().filter(tx => tx.sender.toUserFriendlyAddress() === publicAddress).length;
+          let fees = 0;
+          if (sourceTotalTxInMempool === 10) {
+            console.log('10 free reached, tx using fees');
+            fees = NIMIQ_TRANSACTION_FEE;
+          };
+          console.log('Using fee:', fees);
           return $.sendTransaction(privateKey, destinations.destinationAddress, nimAmount, tip, replyFn);
-        })
+        });
         await Promise.all(sendTransactions);
       } else {
         // single transaction

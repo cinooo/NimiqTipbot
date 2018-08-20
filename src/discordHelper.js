@@ -5,7 +5,8 @@ import * as dynamo from './utils/dynamo.js';
 const {
   NIMIQ_NETWORK,
   DISCORD_BOT_TOKEN,
-  DISCORD_HISTORY_CHANNEL_ID
+  DISCORD_HISTORY_CHANNEL_ID,
+  RAIN_SOAK_MAXIMUM_PERSONS
 } = process.env;
 
 let client;
@@ -60,7 +61,7 @@ async function getReplyMessageForBalance(authorId, $) {
   return {
     replyMessage: `Your NIM address is: ${userAddress}
 
-Your current balance is ${userBalance}
+Your current balance is ${userBalance} NIM
 
 You can deposit by visiting ${getNimDepositLink(userAddress)}`
   };
@@ -113,9 +114,9 @@ e.g. !tip @cino#0628 3`);
       }
 
       // Check the user has not reached MAX_USER_TRANSACTION_LIMIT
-      if (await dynamo.userHasReachedTransactionLimit(authorId)) {
-        return reply(`Maximum limit of 10 transactions per account source reached, please try again in a minute, this is to prevent spam.`);
-      };
+      // if (await dynamo.userHasReachedTransactionLimit(authorId)) {
+      //   return reply(`Maximum limit of 10 transactions per account source reached, please try again in a minute, this is to prevent spam.`);
+      // };
 
       console.log(userBalance, nimAmount, parseFloat(userBalance), parseFloat(nimAmount), parseFloat(userBalance) >= parseFloat(nimAmount));
       if (parseFloat(userBalance) >= parseFloat(nimAmount)) {
@@ -159,7 +160,7 @@ e.g. !withdraw NQ52 BCNT 9X0Y GX7N T86X 7ELG 9GQH U5N8 27FE`);
 
   // Check the user has not reached MAX_USER_TRANSACTION_LIMIT
   if (await dynamo.userHasReachedTransactionLimit(authorId)) {
-    return reply(`Maximum limit of 10 transactions per account source reached, please try again in a minute, this is to prevent spam.`);
+    return reply(`Maximum limit of 10 free transactions per account source reached, please try again in a minute.`);
   };
 
   await logMessageToHistoryChannel(`Withdrawal from discord: ${authorId}`);
@@ -191,11 +192,11 @@ function getRandomSubarray(arr, size) {
   return shuffled.slice(0, size);
 }
 
-async function getReplyMessageForRain(messageId, authorId, args, content, $, message) {
+async function getReplyMessageForRainOrSoak(method = 'rain', messageId, authorId, args, content, $, message) {
   // !rain 10
   // console.log(args, args.length);
   if (args.length !== 2) {
-    return reply(`Wrong format for !rain command, use:
+    return reply(`Wrong format for !${method} command, use:
 !rain [total_NIM_amount_to_rain] [number_of_ppl_to_rain_to]`);
   };
 
@@ -203,20 +204,28 @@ async function getReplyMessageForRain(messageId, authorId, args, content, $, mes
   const rainToNumber = parseInt(args[1]);
 
   if (isNaN(nimAmount)) {
-    return reply(`Use a valid whole number for the NIM rain amount`);
+    return reply(`Use a valid whole number for the NIM ${method} amount`);
   };
 
   if (nimAmount < 0.0001) {
-    return reply(`Minimum amount to rain is 0.0001`);
+    return reply(`Minimum amount to ${method} is 0.0001`);
   }
 
-  if (isNaN(rainToNumber) || rainToNumber < 1 || rainToNumber > 10) {
-    return reply(`Please choose a number between 1 and 10 persons`);
+  if (isNaN(rainToNumber) || rainToNumber < 1 || rainToNumber > RAIN_SOAK_MAXIMUM_PERSONS) {
+    return reply(`Please choose a number between 1 and ${RAIN_SOAK_MAXIMUM_PERSONS} persons`);
   };
 
   const isNotBot = member => member.user.bot === false;
   const isNotOriginatingAuthor = member => member.user.id !== authorId;
-  const members = message.guild.members.reduce((acc, member) => {
+
+  console.log(message.guild.name, message.guild.members.array().length, message.guild.members.filter(member => member.presence.status === 'online').array().length);
+
+  // soak uses only the members which are online
+  const whichMembers = method === 'rain'
+    ? message.guild.members
+    : message.guild.members.filter(member => member.presence.status === 'online');
+
+  const members = whichMembers.reduce((acc, member) => {
     return isNotBot(member) && isNotOriginatingAuthor(member) ? [
       ...acc,
       member
@@ -227,24 +236,29 @@ async function getReplyMessageForRain(messageId, authorId, args, content, $, mes
   // return reply(`hello <@361767686222512130>`);
 
   if (members.length < rainToNumber) {
-    return reply(`There has to be at least ${rainToNumber} other members on this server to use the !rain command`);
+    return reply(`There has to be at least ${rainToNumber} other members on this server to use the !${method} command`);
   };
 
   const { balance: sourceBalance, publicAddress: sourceAddress, privateKey } = await dynamo.getUserPublicAddress(authorId, $);
-  if (parseFloat(sourceBalance) < nimAmount) {
-    return reply(`Insufficient NIM in balance.`);
-  }
 
-  // Check the user has not reached MAX_USER_TRANSACTION_LIMIT
-  if (await dynamo.userHasReachedTransactionLimit(authorId, rainToNumber)) {
-    return reply(`Maximum limit of 10 transactions per account source reached, please try again in a minute, this is to prevent spam.`);
+  // require a minimum of 1 additional NIM in wallet for rain & soaks to cover fees
+  const feeRequired = method === 'soak' ? 1.0 : 0.0;
+
+  if (parseFloat(sourceBalance) + feeRequired < nimAmount) {
+    const message = method === 'rain' ? `Insufficient NIM in balance.` : `Insufficient NIM in balance. rain & soak also requires 1 additional NIM in case transaction fees are required.`;
+    return reply(message);
   };
 
-  await logMessageToHistoryChannel(`Processing rain from discord: ${authorId} - nim amount ${nimAmount}, rain number ${rainToNumber}`);
+  // Check the user has not reached MAX_USER_TRANSACTION_LIMIT
+  // if (await dynamo.userHasReachedTransactionLimit(authorId, rainToNumber)) {
+  //   return reply(`Maximum limit of 10 transactions per account source reached, please try again in a minute, this is to prevent spam.`);
+  // };
+
+  await logMessageToHistoryChannel(`Processing ${method} from discord: ${authorId} - nim amount ${nimAmount}, ${method} number ${rainToNumber}`);
 
   // ensure that there is enough to split between everyone and it is rounded down
   const individualRainAmount = Math.floor(nimAmount / rainToNumber * 100000) / 100000;
-  console.log(individualRainAmount);
+  // console.log(individualRainAmount);
 
   const chosenMembers = getRandomSubarray(members, rainToNumber);
   const membersIdListString = chosenMembers.reduce((acc, member) => {
@@ -272,7 +286,7 @@ async function getReplyMessageForRain(messageId, authorId, args, content, $, mes
     rainDestinations,
     nimAmount: individualRainAmount
   };
-  console.log('rain response', response);
+  // console.log('rain response', response);
   return response;
 }
 
@@ -313,6 +327,10 @@ export default {
 
       // console.log(message.guild);
       // console.log(channelId, messageId, content);
+      // console.log(message.guild.name, message.guild.presences.array().length, message.guild.presences.filter(presence => presence.status === 'online').array().length);
+      console.log(message.guild.name, message.guild.members.array().length, message.guild.members.filter(member => member.presence.status === 'online').array().length);
+      // console.log(message.guild.presences.values().length);
+      // console.log(message.guild.members.length);
 
       const singleSpaceContent = content.replace(/ [ ]*/gm, ' ');
       const command = getBotCommand(singleSpaceContent);
@@ -334,7 +352,7 @@ export default {
           : command === BOT_COMMAND_BALANCE || command === BOT_COMMAND_DEPOSIT ? await getReplyMessageForBalance(authorId, $)
             : command === BOT_COMMAND_TIP ? await getReplyMessageForTip(messageId, authorId, args, niceName, content, $)
               : command === BOT_COMMAND_WITHDRAW ? await getReplyMessageForWithdraw(messageId, authorId, args, content, $)
-                : command === BOT_COMMAND_RAIN ? await getReplyMessageForRain(messageId, authorId, args, content, $, message) : {};
+                : command === BOT_COMMAND_RAIN ? await getReplyMessageForRainOrSoak('rain', messageId, authorId, args, content, $, message) : {};
 
         // the replyMessage creates a new message id - this message id later is used and edited with the transaction details
         let newReplyMessage;

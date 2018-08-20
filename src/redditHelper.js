@@ -184,7 +184,7 @@ export default {
     await logMessageToHistoryChannel(`Check !deposit from reddit: ${authorName}`);
     const replyMessage = `Your NIM address is: ${userAddress}
 
-Your current balance is ${userBalance}
+Your current balance is ${userBalance} NIM
 
 You can deposit by visiting ${getNimDepositLink(userAddress)}
 
