@@ -194,7 +194,7 @@ export default {
     //   fees = NIMIQ_TRANSACTION_FEE;
     // };
     // console.log('Using fee:', fees);
-
+    console.log('fee..', fees);
     // else proceed with the free transaction
     var transaction = wallet.createTransaction(
       destinationAddress, // who we are sending to
