@@ -244,8 +244,8 @@ export default {
     $.consensus.subscribeAccounts(recipientAddresses);
 
     try {
-      // await $.consensus.relayTransaction(transaction);
-      await $.consensus.mempool.pushTransaction(transaction);
+      await $.consensus.relayTransaction(transaction);
+      // await $.consensus.mempool.pushTransaction(transaction);
       await logMessageToHistoryChannel(`relayTransaction, waiting to confirm, ${transaction.hash().toHex()}`);
       console.log('relayTransaction, waiting to confirm', transaction.hash().toHex());
     } catch (e) {
