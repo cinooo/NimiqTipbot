@@ -289,7 +289,7 @@ export default {
   },
 
   async pollTransactions($) {
-    Nimiq.Log.instance.level = 1;
+    // Nimiq.Log.instance.level = 1;
     const getNonPendingTips = (items) => items.filter(item => item.status === dynamo.TIPS_STATUS_NEW);
     //
     // scan tips table for non pending transactions
