@@ -137,7 +137,7 @@ export default {
   // Discord !tip
   // Reddit withdraw from personal message
   // Reddit tip in comments
-  async _sendTransaction(privateKey, destinationFriendlyAddress, coins, tip, fn, sourcePublicAddress) {
+  async _sendTransaction(privateKey, destinationFriendlyAddress, coins, tip, fn, sourcePublicAddress, fees = 0) {
     if (!this.isEstablished()) {
       const updateAttributes = {
         status: {
@@ -167,8 +167,8 @@ export default {
 
     const isMempoolAvailable = ($) => $.mempool.getTransactions().length < Nimiq.Mempool.SIZE_MAX;
     // const canSendFreeTransaction = ($, senderAddress) => $.mempool.getPendingTransactions(senderAddress).length < Nimiq.Mempool.FREE_TRANSACTIONS_PER_SENDER_MAX;
-    const senderPendingTransactions = ($, senderAddress) => $.mempool.getPendingTransactions(senderAddress).length;
-    const senderAddress = wallet.address;
+    // const senderPendingTransactions = ($, senderAddress) => $.mempool.getPendingTransactions(senderAddress).length;
+    // const senderAddress = wallet.address;
     if (isMempoolAvailable($) === false) {
       console.log(`Mempool transactions full or no free transactions left`);
       // free up for next round of polling
@@ -185,24 +185,23 @@ export default {
       return;
     }
 
-    console.log('send tx, mempool number of tx', $.mempool.getTransactions().length);
-    console.log('send tx, mempool pending number of tx for senderAddress', senderPendingTransactions($, senderAddress));
-    const sourceTotalTxInMempool = senderPendingTransactions($, senderAddress);
-    let fees = 0;
-    if (sourceTotalTxInMempool >= 10) {
-      console.log('>= 10 free reached, tx using fees total:', sourceTotalTxInMempool);
-      fees = NIMIQ_TRANSACTION_FEE;
-    };
-    console.log('Using fee:', fees);
+    // console.log('send tx, mempool number of tx', $.mempool.getTransactions().length);
+    // console.log('send tx, mempool pending number of tx for senderAddress', senderPendingTransactions($, senderAddress));
+    // const sourceTotalTxInMempool = senderPendingTransactions($, senderAddress);
+    // let fees = 0;
+    // if (sourceTotalTxInMempool >= 10) {
+    //   console.log('>= 10 free reached, tx using fees total:', sourceTotalTxInMempool);
+    //   fees = NIMIQ_TRANSACTION_FEE;
+    // };
+    // console.log('Using fee:', fees);
 
     // else proceed with the free transaction
     var transaction = wallet.createTransaction(
       destinationAddress, // who we are sending to
       satoshis, // amount in satoshi (no decimal format)
-      parseInt(fees), // fee
+      fees, // fee
       $.consensus.blockchain.head.height);
-    // const result = await $.consensus.relayTransaction(transaction);
-    // console.log('sendTransaction result', result);
+
     const id = $.mempool.on('transaction-mined', async tx2 => {
       if (transaction.equals(tx2)) {
         const logMessage = `Block height ${$.blockchain.height} transaction mined ${tx2.hash().toHex()}`;
@@ -321,7 +320,7 @@ export default {
       await dynamo.updateTransaction(commentId, updateAttributes);
 
       // start the transaction send process
-      const { balance: userBalance, publicAddress, privateKey } = await dynamo.getUserPublicAddress(sourceAuthor, $);
+      const { balance: userBalance, privateKey } = await dynamo.getUserPublicAddress(sourceAuthor, $);
       if (parseFloat(userBalance) < parseFloat(nimAmount)) {
         await this.replyChannel(replyMetadata, `Insufficient funds to make transaction.`);
         await dynamo.deleteTransaction({ commentId: tip.commentId });
@@ -335,12 +334,10 @@ export default {
       })(replyMetadata);
       if (Array.isArray(rainDestinations) && typeof destinationAddress === 'undefined') {
         const sendTransactions = rainDestinations.map(destinations => {
-          return $.sendTransaction(privateKey, destinations.destinationAddress, nimAmount, tip, replyFn);
+          // rains require fees
+          return $.sendTransaction(privateKey, destinations.destinationAddress, nimAmount, tip, replyFn, 138);
         });
-        for (let j = 0; j < sendTransactions.length; j++) {
-          await sendTransactions[j];
-        }
-        // await Promise.all(sendTransactions);
+        await Promise.all(sendTransactions);
       } else {
         // single transaction
         await $.sendTransaction(privateKey, destinationAddress, nimAmount, tip, replyFn);
