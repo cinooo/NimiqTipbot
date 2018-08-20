@@ -336,7 +336,10 @@ export default {
         const sendTransactions = rainDestinations.map(destinations => {
           return $.sendTransaction(privateKey, destinations.destinationAddress, nimAmount, tip, replyFn);
         });
-        await Promise.all(sendTransactions);
+        for (let j = 0; j < sendTransactions.length; j++) {
+          await sendTransactions[j];
+        }
+        // await Promise.all(sendTransactions);
       } else {
         // single transaction
         await $.sendTransaction(privateKey, destinationAddress, nimAmount, tip, replyFn);
