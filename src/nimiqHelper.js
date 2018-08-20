@@ -185,10 +185,12 @@ export default {
       return;
     }
 
+    console.log('send tx, mempool number of tx', $.mempool.getTransactions().length);
+    console.log('send tx, mempool pending number of tx for senderAddress', senderPendingTransactions($, senderAddress));
     const sourceTotalTxInMempool = senderPendingTransactions($, senderAddress);
     let fees = 0;
     if (sourceTotalTxInMempool >= 10) {
-      console.log('10 free reached, tx using fees total:', sourceTotalTxInMempool);
+      console.log('>= 10 free reached, tx using fees total:', sourceTotalTxInMempool);
       fees = NIMIQ_TRANSACTION_FEE;
     };
     console.log('Using fee:', fees);
@@ -242,7 +244,8 @@ export default {
     $.consensus.subscribeAccounts(recipientAddresses);
 
     try {
-      await $.consensus.relayTransaction(transaction);
+      // await $.consensus.relayTransaction(transaction);
+      await $.consensus.mempool.pushTransaction(transaction);
       await logMessageToHistoryChannel(`relayTransaction, waiting to confirm, ${transaction.hash().toHex()}`);
       console.log('relayTransaction, waiting to confirm', transaction.hash().toHex());
     } catch (e) {
@@ -329,7 +332,6 @@ export default {
           this.replyChannel(replyMetadata, replyMessage, transactionHash);
         };
       })(replyMetadata);
-      console.log('send tx, mempool number of tx', $.mempool.getTransactions().length);
       if (Array.isArray(rainDestinations) && typeof destinationAddress === 'undefined') {
         const sendTransactions = rainDestinations.map(destinations => {
           return $.sendTransaction(privateKey, destinations.destinationAddress, nimAmount, tip, replyFn);
