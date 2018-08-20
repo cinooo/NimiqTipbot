@@ -137,7 +137,7 @@ export default {
   // Discord !tip
   // Reddit withdraw from personal message
   // Reddit tip in comments
-  async _sendTransaction(privateKey, destinationFriendlyAddress, coins, tip, fn, sourcePublicAddress, fees = 0) {
+  async _sendTransaction(privateKey, destinationFriendlyAddress, coins, tip, fn, fees = 0) {
     if (!this.isEstablished()) {
       const updateAttributes = {
         status: {
@@ -194,7 +194,7 @@ export default {
     //   fees = NIMIQ_TRANSACTION_FEE;
     // };
     // console.log('Using fee:', fees);
-    console.log('fee..', fees);
+
     // else proceed with the free transaction
     var transaction = wallet.createTransaction(
       destinationAddress, // who we are sending to
