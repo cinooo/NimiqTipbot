@@ -137,7 +137,7 @@ export default {
   // Discord !tip
   // Reddit withdraw from personal message
   // Reddit tip in comments
-  async _sendTransaction(privateKey, destinationFriendlyAddress, coins, tip, fn) {
+  async _sendTransaction(privateKey, destinationFriendlyAddress, coins, tip, fn, sourcePublicAddress) {
     if (!this.isEstablished()) {
       const updateAttributes = {
         status: {
@@ -166,10 +166,10 @@ export default {
     // console.log($.consensus.blockchain.head.height);
 
     const isMempoolAvailable = ($) => $.mempool.getTransactions().length < Nimiq.Mempool.SIZE_MAX;
-    const canSendFreeTransaction = ($, senderAddress) => $.mempool.getPendingTransactions(senderAddress).length < Nimiq.Mempool.FREE_TRANSACTIONS_PER_SENDER_MAX;
-
+    // const canSendFreeTransaction = ($, senderAddress) => $.mempool.getPendingTransactions(senderAddress).length < Nimiq.Mempool.FREE_TRANSACTIONS_PER_SENDER_MAX;
+    const senderPendingTransactions = ($, senderAddress) => $.mempool.getPendingTransactions(senderAddress).length;
     const senderAddress = wallet.address;
-    if (isMempoolAvailable($) === false || canSendFreeTransaction($, senderAddress) === false) {
+    if (isMempoolAvailable($) === false) {
       console.log(`Mempool transactions full or no free transactions left`);
       // free up for next round of polling
       const updateAttributes = {
@@ -185,11 +185,19 @@ export default {
       return;
     }
 
+    const sourceTotalTxInMempool = senderPendingTransactions($, senderAddress);
+    let fees = 0;
+    if (sourceTotalTxInMempool >= 10) {
+      console.log('10 free reached, tx using fees total:', sourceTotalTxInMempool);
+      fees = NIMIQ_TRANSACTION_FEE;
+    };
+    console.log('Using fee:', fees);
+
     // else proceed with the free transaction
     var transaction = wallet.createTransaction(
       destinationAddress, // who we are sending to
       satoshis, // amount in satoshi (no decimal format)
-      parseInt(NIMIQ_TRANSACTION_FEE), // fee
+      parseInt(fees), // fee
       $.consensus.blockchain.head.height);
     // const result = await $.consensus.relayTransaction(transaction);
     // console.log('sendTransaction result', result);
@@ -324,13 +332,6 @@ export default {
       console.log('send tx, mempool number of tx', $.mempool.getTransactions().length);
       if (Array.isArray(rainDestinations) && typeof destinationAddress === 'undefined') {
         const sendTransactions = rainDestinations.map(destinations => {
-          const sourceTotalTxInMempool = $.mempool.getTransactions().filter(tx => tx.sender.toUserFriendlyAddress() === publicAddress).length;
-          let fees = 0;
-          if (sourceTotalTxInMempool === 10) {
-            console.log('10 free reached, tx using fees');
-            fees = NIMIQ_TRANSACTION_FEE;
-          };
-          console.log('Using fee:', fees);
           return $.sendTransaction(privateKey, destinations.destinationAddress, nimAmount, tip, replyFn);
         });
         await Promise.all(sendTransactions);
