@@ -52,7 +52,9 @@ e.g. !withdraw NQ52 BCNT 9X0Y GX7N T86X 7ELG 9GQH U5N8 27FE
 
 !deposit - Gives instructions on how to deposit
 
-!rain [total_NIM_amount_to_rain] [number_of_ppl_to_rain_to] - sends NIM to a random number of users, max 10`
+!rain [total_NIM_amount_to_rain] [number_of_ppl_to_rain_to] - sends NIM to a random number of users, max ${RAIN_SOAK_MAXIMUM_PERSONS} ppl
+
+!soak [total_NIM_amount_to_soak] [number_of_ppl_to_soak_to] - sends NIM to a random number of online users, max ${RAIN_SOAK_MAXIMUM_PERSONS} ppl`
   };
 };
 
