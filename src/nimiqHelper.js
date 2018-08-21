@@ -230,17 +230,19 @@ export default {
       if (Array.isArray(rainDestinations) && typeof destinationAddress === 'undefined') {
         return [
           ...acc,
-          ...rainDestinations.map(destination => Nimiq.Address.fromUserFriendlyAddress(destination.destinationAddress))
+          ...rainDestinations.map(destination => destination.destinationAddress)
         ];
       } else {
         return [
           ...acc,
-          Nimiq.Address.fromUserFriendlyAddress(destinationAddress)
+          destinationAddress
         ];
       }
     }, []);
+    const uniqueRecipientAddresses = [...new Set(recipientAddresses)];
+    const addresses = uniqueRecipientAddresses.map(address => Nimiq.Address.fromUserFriendlyAddress(address));
 
-    $.consensus.subscribeAccounts(recipientAddresses);
+    $.consensus.subscribeAccounts(addresses);
 
     try {
       await $.consensus.relayTransaction(transaction);
