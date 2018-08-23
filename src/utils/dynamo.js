@@ -241,3 +241,16 @@ export const getAllTransactions = async (maxItems = 1) => {
   } while (lastEvaluatedKey && items.length < maxItems);
   return items;
 };
+
+export const getAllAccounts = async (maxItems = 1) => {
+  let lastEvaluatedKey;
+  let items = [];
+  do {
+    let response = await scan(DYNAMO_TABLE_TIPBOT_USERS, lastEvaluatedKey, maxItems);
+    await wait(1);
+    items = items.concat(response.Items);
+    lastEvaluatedKey = response.LastEvaluatedKey; // undefined if no more results left to scan
+    items = items.slice(0, maxItems);
+  } while (lastEvaluatedKey && items.length < maxItems);
+  return items;
+};
