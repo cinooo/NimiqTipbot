@@ -89,7 +89,7 @@ export const userHasReachedTransactionLimit = async (sourceAuthorId, numberOfNew
 
 export const putBulkTransactions = async (commentId, loggedDetails, time = new Date().getTime()) => {
   // must have loggedDetails.sourceAuthor
-}
+};
 
 export const putTransaction = async (commentId, loggedDetails, time = new Date().getTime()) => {
   let params = {
