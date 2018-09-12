@@ -214,9 +214,10 @@ ${messageFooter}`;
       };
     }
     // const withdrawNimReg = /[0-9]+\.?[0-9]{0,6}/;
-    const withdrawNimReg = /\d*(\.\d{1,6})?/;
-    const withdrawAmount = chunks[1].match(withdrawNimReg) ? chunks[1].match(withdrawNimReg)[0] : null;
-    if (withdrawAmount === null || isNaN(withdrawAmount)) {
+    // const withdrawNimReg = /\d+(\.\d{1,6})?/;
+    // const withdrawAmount = chunks[1].match(withdrawNimReg) ? chunks[1].match(withdrawNimReg)[0] : null;
+    const withdrawAmount = parseFloat(chunks[1]);
+    if (isNaN(withdrawAmount)) {
       return {
         replyMessage: `Encountered a problem reading the withdrawal amount, make sure it is a valid NIM amount. The second sentence in the message should be a digit value.`,
         replySubject
@@ -324,7 +325,7 @@ ${messageFooter}`;
     const comment = await this.R().get_comment(commentId);
     const replyBody = `${body}
 
-${messageFooter}`
+${messageFooter}`;
     const result = await comment.reply(replyBody);
     return result;
   },
@@ -358,20 +359,20 @@ ${messageFooter}`;
     const isNimTip = matches !== null;
     const nimAmount = isNimTip ? matches[1] : 0;
 
-//     const log =
-// `processCommentTip:
-//   commentId: ${commentId}
-//   body: ${body}
-//   sourceAuthor: ${sourceAuthor}
-//   linkId: ${linkId}
-//   parentId: ${parentId}
-//   linkAuthor: ${linkAuthor}
-//   linkPermalink: ${linkPermalink}
-//
-//   destinationAuthor: ${destinationAuthor}
-//   isNimTip: ${isNimTip}
-//   nimAmount: ${nimAmount}`;
-//     console.log(log);
+    //     const log =
+    // `processCommentTip:
+    //   commentId: ${commentId}
+    //   body: ${body}
+    //   sourceAuthor: ${sourceAuthor}
+    //   linkId: ${linkId}
+    //   parentId: ${parentId}
+    //   linkAuthor: ${linkAuthor}
+    //   linkPermalink: ${linkPermalink}
+    //
+    //   destinationAuthor: ${destinationAuthor}
+    //   isNimTip: ${isNimTip}
+    //   nimAmount: ${nimAmount}`;
+    //     console.log(log);
 
     if (isNimTip && parseFloat(nimAmount) >= 0.00001) {
       // check to comment id to see if its already logged
@@ -412,7 +413,7 @@ ${messageFooter}`;
           await logMessageToHistoryChannel(`Processing !tip from reddit: Insufficient balance from ${sourceAuthor}`);
         }
       } else {
-        console.log(`commentId: ${commentId} has already been logged.`)
+        console.log(`commentId: ${commentId} has already been logged.`);
       }
     }
   },
